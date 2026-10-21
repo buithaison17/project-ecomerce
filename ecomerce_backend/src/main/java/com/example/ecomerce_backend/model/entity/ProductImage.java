@@ -1,16 +1,14 @@
 package com.example.ecomerce_backend.model.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "product_images")
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
+@Getter
+@Setter
 @Builder
 public class ProductImage {
     @Id
@@ -19,6 +17,7 @@ public class ProductImage {
     @ManyToOne
     @JoinColumn(nullable = false)
     private Product product;
+    @Column(length = 500)
     private String url;
     @Builder.Default
     private Boolean isDeleted = false;
