@@ -1,0 +1,66 @@
+services:
+    mysql:
+        image: mysql:8.0
+        container_name: mysql
+        restart: unless-stopped
+        environment:
+            MYSQL_ROOT_PASSWORD: ${DATA_SOURCE_PASSSWORD}
+            MYSQL_DATABASE: ecommerce
+        ports:
+            - "3306:3306"
+        volumes:
+            - mysql_data:/var/lib/mysql
+        networks:
+            - ecommerce-network
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "mysqladmin",
+                    "ping",
+                    "-h",
+                    "localhost",
+                    "-p${DATA_SOURCE_PASSSWORD}",
+                ]
+            interval: 10s
+            timeout: 5s
+            retries: 10
+            start_period: 30s
+
+    backend:
+        build:
+            context: ./ecommerce_backend
+            dockerfile: Dockerfile
+        container_name: backend
+        restart: unless-stopped
+        ports:
+            - "8080:8080"
+        environment:
+            DATA_SOURCE_URL: ${DATA_SOURCE_URL}
+            DATA_SOURCE_USERNAME: ${DATA_SOURCE_USERNAME}
+            DATA_SOURCE_PASSSWORD: ${DATA_SOURCE_PASSSWORD}
+        depends_on:
+            mysql:
+                condition: service_healthy
+        networks:
+            - ecommerce-network
+
+    frontend:
+        build:
+            context: ./ecommerce_frontend
+            dockerfile: Dockerfile
+        container_name: frontend
+        restart: unless-stopped
+        ports:
+            - "80:80"
+        depends_on:
+            - backend
+        networks:
+            - ecommerce-network
+
+volumes:
+    mysql_data:
+
+networks:
+    ecommerce-network:
+        driver: bridge
