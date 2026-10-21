@@ -64,4 +64,26 @@ public class GlobalExceptionHandler {
                 HttpStatus.UNAUTHORIZED
         ), HttpStatus.UNAUTHORIZED);
     }
+
+    @ExceptionHandler(ResourceExistedException.class)
+    public ResponseEntity<ApiDataResponse<Void>> handleResourceExistedException(ResourceExistedException exception) {
+        return new ResponseEntity<>(new ApiDataResponse<>(
+                false,
+                exception.getMessage(),
+                null,
+                null,
+                HttpStatus.BAD_REQUEST
+        ), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(RefreshTokenInvalidException.class)
+    public ResponseEntity<ApiDataResponse<Void>> handleRefreshTokenInvalidException(RefreshTokenInvalidException exception) {
+        return new ResponseEntity<>(new ApiDataResponse<>(
+                false,
+                exception.getMessage(),
+                null,
+                null,
+                HttpStatus.NOT_FOUND
+        ), HttpStatus.NOT_FOUND);
+    }
 }

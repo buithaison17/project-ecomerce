@@ -26,7 +26,6 @@ public class UserInformation {
     private User user;
     @Column(nullable = false)
     private String fullName;
-    @Column(nullable = false)
     private String avatarUrl;
     @Column(nullable = false)
     private LocalDate dateOfBirth;

@@ -36,6 +36,8 @@ dependencies {
     implementation("io.jsonwebtoken:jjwt-api:0.13.0")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.13.0")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.13.0")
+    implementation("org.mapstruct:mapstruct:1.7.0.Beta2")
+    annotationProcessor("org.mapstruct:mapstruct-processor:1.7.0.Beta2")
 }
 
 tasks.named('test') {
