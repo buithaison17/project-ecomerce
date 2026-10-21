@@ -5,6 +5,7 @@ import com.example.ecomerce_backend.exception.ResourceExistedException;
 import com.example.ecomerce_backend.model.dto.request.LoginRequest;
 import com.example.ecomerce_backend.model.dto.request.RegisterRequest;
 import com.example.ecomerce_backend.model.dto.response.LoginResponse;
+import com.example.ecomerce_backend.model.dto.response.AuthenticatedUserResponse;
 import com.example.ecomerce_backend.model.dto.response.UserRegisterResponse;
 import com.example.ecomerce_backend.model.entity.RefreshToken;
 import com.example.ecomerce_backend.model.entity.Role;
@@ -65,7 +66,19 @@ public class AuthService {
         httpServletResponse.addCookie(cookie);
         return LoginResponse.builder()
                 .accessToken(accessToken)
+                .user(getAuthenticatedUser(userPrincipal.getUser()))
                 .build();
+    }
+
+    public AuthenticatedUserResponse getAuthenticatedUser(User user) {
+        UserInformation information = userInformationRepository.findByUserId(user.getId()).orElse(null);
+        return new AuthenticatedUserResponse(
+                user.getId(),
+                user.getUsername(),
+                information != null ? information.getFullName() : user.getUsername(),
+                information != null ? information.getAvatarUrl() : null,
+                user.getRole().getName()
+        );
     }
 
     @Transactional
