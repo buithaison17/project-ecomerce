@@ -17,9 +17,17 @@ spring:
   config:
     import:
       optional:file:.env[.properties]
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 10MB
 server:
   port: 8080
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION}
   refresh-expiration: ${JWT_REFRESH_EXPIRATION}
+app:
+  upload-dir: ${UPLOAD_DIR:uploads}
+  low-stock-threshold: 5
+  seed-sample-data: ${SEED_SAMPLE_DATA:true}

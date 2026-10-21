@@ -86,4 +86,37 @@ public class GlobalExceptionHandler {
                 HttpStatus.NOT_FOUND
         ), HttpStatus.NOT_FOUND);
     }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiDataResponse<Void>> handleResourceNotFoundException(ResourceNotFoundException exception) {
+        return new ResponseEntity<>(new ApiDataResponse<>(
+                false,
+                exception.getMessage(),
+                null,
+                null,
+                HttpStatus.NOT_FOUND
+        ), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ApiDataResponse<Void>> handleBadRequestException(BadRequestException exception) {
+        return new ResponseEntity<>(new ApiDataResponse<>(
+                false,
+                exception.getMessage(),
+                null,
+                null,
+                HttpStatus.BAD_REQUEST
+        ), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(InsufficientStockException.class)
+    public ResponseEntity<ApiDataResponse<Void>> handleInsufficientStockException(InsufficientStockException exception) {
+        return new ResponseEntity<>(new ApiDataResponse<>(
+                false,
+                exception.getMessage(),
+                null,
+                null,
+                HttpStatus.CONFLICT
+        ), HttpStatus.CONFLICT);
+    }
 }

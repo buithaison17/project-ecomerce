@@ -16,4 +16,12 @@ public class ApiDataResponse<T> {
     private T data;
     private T errors;
     private HttpStatus status;
+
+    public static <T> ApiDataResponse<T> ok(String message, T data) {
+        return new ApiDataResponse<>(true, message, data, null, HttpStatus.OK);
+    }
+
+    public static <T> ApiDataResponse<T> created(String message, T data) {
+        return new ApiDataResponse<>(true, message, data, null, HttpStatus.CREATED);
+    }
 }
