@@ -10,7 +10,9 @@ import org.springframework.stereotype.Component;
 import java.util.Comparator;
 import java.util.List;
 
-/** Mapper viết tay cho nhóm Catalog (Category / Product / Inventory). */
+/**
+ * Mapper viết tay cho nhóm Catalog (Category / Product / Inventory).
+ */
 @Component
 public class CatalogMapper {
 
@@ -61,6 +63,14 @@ public class CatalogMapper {
                 available < lowStockThreshold,
                 inventory.getUpdatedAt()
         );
+    }
+
+    /**
+     * Ảnh đầu tiên chưa bị xóa của sản phẩm; null nếu chưa có ảnh.
+     */
+    public String thumbnailUrl(Product product) {
+        List<ProductImageResponse> images = activeImages(product);
+        return images.isEmpty() ? null : images.get(0).url();
     }
 
     private List<ProductImageResponse> activeImages(Product product) {
