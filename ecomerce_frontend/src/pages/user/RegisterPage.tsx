@@ -3,7 +3,7 @@ import { message } from "antd";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import * as z from "zod";
-import { api } from "../lib/axios";
+import { api } from "../../lib/axios.ts";
 
 const schema = z.object({
     username: z.string().min(3, "Tên đăng nhập tối thiểu 3 ký tự"),

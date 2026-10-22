@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import * as z from "zod";
-import { useAuthStore } from "../store/authStore";
+import { useAuthStore } from "../../store/authStore.tsx";
 
 const loginSchema = z.object({
     username: z.string().min(1, "Vui lòng nhập tên đăng nhập"),

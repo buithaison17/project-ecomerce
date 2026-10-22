@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { loginService } from "../service/loginService";
 
 interface AuthUser {
+    username: string;
     fullName: string;
     avatarUrl: string | null;
     role: string;
@@ -25,6 +26,7 @@ interface State {
     user: AuthUser | null;
     login: (data: { username: string; password: string }) => Promise<void>;
     loadCurrentUser: () => Promise<void>;
+    logout: () => Promise<void>;
 }
 
 export const useAuthStore = create<State>((set) => ({
@@ -48,5 +50,14 @@ export const useAuthStore = create<State>((set) => ({
         const user = await loginService.getCurrentUser();
         set({ user });
         localStorage.setItem("currentUser", JSON.stringify(user));
+    },
+    logout: async () => {
+        try {
+            await loginService.logout();
+        } finally {
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("currentUser");
+            set({ accessToken: "", user: null });
+        }
     },
 }));

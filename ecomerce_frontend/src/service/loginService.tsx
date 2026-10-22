@@ -9,4 +9,7 @@ export const loginService = {
         const response = await api.get("/users/me");
         return response.data;
     },
+    logout: async () => {
+        await api.post("/auth/logout");
+    },
 };
