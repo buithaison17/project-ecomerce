@@ -15,7 +15,6 @@ public record OrderResponse(
         String orderStatus,
         PaymentMethod paymentMethod,
         PaymentStatus paymentStatus,
-        String note,
-        List<OrderItemResponse> items
+        String note
 ) {
 }
