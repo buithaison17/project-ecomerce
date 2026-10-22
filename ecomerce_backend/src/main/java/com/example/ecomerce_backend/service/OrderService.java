@@ -19,6 +19,10 @@ import com.example.ecomerce_backend.repository.OrderRepository;
 import com.example.ecomerce_backend.repository.UserDeliveryRepository;
 import com.example.ecomerce_backend.security.principal.UserPrincipal;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +43,45 @@ public class OrderService {
     private final OrderItemRepository orderItemRepository;
     private final OrderMapper orderMapper;
 
+    // Lấy toàn bộ danh sách đơn hàng (ADMIN)
+    public Page<OrderResponse> findAll(Integer currentPage, Integer pageSize, OrderStatus orderStatus) {
+        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
+        Pageable pageable = PageRequest.of(currentPage - 1, pageSize, sort);
+        if (orderStatus == null) {
+            Page<Order> orders = orderRepository.findByIsDeleted(false, pageable);
+            return orders.map(orderMapper::toOrderResponse);
+        }
+        Page<Order> orders = orderRepository.findByIsDeletedAndOrderStatus(false, orderStatus, pageable);
+        return orders.map(orderMapper::toOrderResponse);
+    }
+
+    // Lấy danh sách đơn hàng của người dùng
+    public Page<OrderResponse> findAllByUser(Integer currentPage, Integer pageSize, OrderStatus orderStatus) {
+        // Lấy thông tin người dùng
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User user = userPrincipal.getUser();
+        // Phân trang
+        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
+        Pageable pageable = PageRequest.of(currentPage - 1, pageSize, sort);
+        if (orderStatus == null) {
+            return orderRepository.findByIsDeletedAndUser(false, user, pageable)
+                    .map(orderMapper::toOrderResponse);
+        }
+        return orderRepository.findByIsDeletedAndUserAndOrderStatus(false, user, orderStatus, pageable)
+                .map(orderMapper::toOrderResponse);
+    }
+
+    // Chi tiết đơn hàng
+    public List<OrderItemResponse> getOrderDetail(Long id) {
+        // Lấy thông tin người dùng
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User user = userPrincipal.getUser();
+        Order order = orderRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+        List<OrderItem> orderItems = orderItemRepository.findByOrder(order);
+        return orderMapper.toOrderItemResponseList(orderItems);
+    }
+
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request) {
         // Lấy thông tin người dùng
@@ -58,12 +101,6 @@ public class OrderService {
                 .collect(Collectors.toMap(
                         CreateOrderItemRequest::productId,
                         CreateOrderItemRequest::quantity));
-        // Kiểm tra tồn kho
-        for (Inventory inventory : inventories) {
-            if (inventory.getQuantity() < quantityMap.get(inventory.getProduct().getId())) {
-                throw new InsufficientStockException("Số lượng sản phẩm không đủ");
-            }
-        }
         // Tính tổng tiền
         BigDecimal totalAmount = productMap.values().stream()
                 .map(product -> product.getPrice().multiply(BigDecimal.valueOf(quantityMap.get(product.getId()))))
@@ -91,24 +128,15 @@ public class OrderService {
                 .paymentStatus(paymentStatus)
                 .note(request.note())
                 .build();
-        Order finalOrder = orderRepository.save(order);
-        // Tạo danh sách order item
-        List<OrderItem> orderItems = request.items().stream().map(item -> {
-                    // Trừ tồn kho
-                    inventoryService.decreaseStock(item.productId(), item.quantity());
-                    return OrderItem.builder()
-                            .order(finalOrder)
-                            .product(productMap.get(item.productId()))
-                            .quantity(item.quantity())
-                            .unitPrice(productMap.get(item.productId()).getPrice())
-                            .totalAmount(productMap.get(item.productId()).getPrice().multiply(BigDecimal.valueOf(item.quantity())))
-                            .build();
-                }
-        ).toList();
-        List<OrderItem> finalOrderItems = orderItemRepository.saveAll(orderItems);
-        // Tạo response
-        List<OrderItemResponse> orderItemResponses = orderMapper.toOrderItemResponseList(finalOrderItems);
-        return orderMapper.toOrderResponse(finalOrder, orderItemResponses);
+        order = orderRepository.save(order);
+        // Trừ tồn kho
+        request.items().forEach(item -> {
+            if (productMap.get(item.productId()).getIsDeleted() == true) {
+                throw new ResourceNotFoundException("Sản phẩm không tồn tại");
+            }
+            inventoryService.decreaseStock(item.productId(), item.quantity());
+        });
+        return orderMapper.toOrderResponse(order);
     }
 
     @Transactional
@@ -117,14 +145,12 @@ public class OrderService {
         User user = userPrincipal.getUser();
         Order order = orderRepository.findByIdAndUser(id, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Đơn hàng không tồn tại"));
-        order.setOrderStatus(OrderStatus.valueOf(request.status()));
-        List<OrderItem> orderItems = orderItemRepository.findByOrder(order);
-        orderRepository.save(order);
         if (order.getOrderStatus().equals(OrderStatus.CANCELLED)) {
             return cancelOrder(id);
         }
-        List<OrderItemResponse> orderItemResponses = orderMapper.toOrderItemResponseList(orderItems);
-        return orderMapper.toOrderResponse(order, orderItemResponses);
+        order.setOrderStatus(OrderStatus.valueOf(request.status()));
+        orderRepository.save(order);
+        return orderMapper.toOrderResponse(order);
     }
 
     @Transactional
@@ -147,7 +173,6 @@ public class OrderService {
                 item.getQuantity()
         ));
         orderRepository.save(order);
-        List<OrderItemResponse> orderItemResponses = orderMapper.toOrderItemResponseList(orderItems);
-        return orderMapper.toOrderResponse(order, orderItemResponses);
+        return orderMapper.toOrderResponse(order);
     }
 }
