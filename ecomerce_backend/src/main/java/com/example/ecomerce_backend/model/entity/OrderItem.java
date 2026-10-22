@@ -1,10 +1,7 @@
 package com.example.ecomerce_backend.model.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -15,13 +12,14 @@ import java.time.LocalDateTime;
 @Table(name = "order_items")
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
+@Getter
+@Setter
 @Builder
 public class OrderItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false)
     private Order order;
     @ManyToOne
@@ -29,6 +27,7 @@ public class OrderItem {
     private Product product;
     @Column(nullable = false)
     private Integer quantity;
+    /** Đơn giá tại thời điểm đặt hàng (không đổi khi sản phẩm đổi giá sau này). */
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal unitPrice;
     @Column(nullable = false, precision = 10, scale = 2)

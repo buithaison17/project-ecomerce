@@ -4,21 +4,22 @@ import com.example.ecomerce_backend.constants.OrderStatus;
 import com.example.ecomerce_backend.constants.PaymentMethod;
 import com.example.ecomerce_backend.constants.PaymentStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
+// Dùng @Getter/@Setter thay cho @Data để tránh vòng lặp hashCode/toString giữa Order <-> OrderItem
 @Entity
 @Table(name = "orders")
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
+@Getter
+@Setter
 @Builder
 public class Order {
     @Id
@@ -37,6 +38,7 @@ public class Order {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal finalAmount;
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     @Builder.Default
     private OrderStatus orderStatus = OrderStatus.PENDING;
     @Column(nullable = false)
@@ -47,6 +49,9 @@ public class Order {
     private PaymentStatus paymentStatus;
     @Column(columnDefinition = "TEXT")
     private String note;
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    @Builder.Default
+    private List<OrderItem> items = new ArrayList<>();
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

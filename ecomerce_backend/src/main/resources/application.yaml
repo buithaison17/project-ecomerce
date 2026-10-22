@@ -30,4 +30,5 @@ jwt:
 app:
   upload-dir: ${UPLOAD_DIR:uploads}
   low-stock-threshold: 5
+  shipping-fee: ${SHIPPING_FEE:0}
   seed-sample-data: ${SEED_SAMPLE_DATA:true}
