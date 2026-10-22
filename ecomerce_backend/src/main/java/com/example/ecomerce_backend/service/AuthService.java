@@ -1,7 +1,9 @@
 package com.example.ecomerce_backend.service;
 
 import com.example.ecomerce_backend.constants.Gender;
+import com.example.ecomerce_backend.exception.NotMatchPasswordException;
 import com.example.ecomerce_backend.exception.ResourceExistedException;
+import com.example.ecomerce_backend.model.dto.request.ChangePasswordRequest;
 import com.example.ecomerce_backend.model.dto.request.LoginRequest;
 import com.example.ecomerce_backend.model.dto.request.RegisterRequest;
 import com.example.ecomerce_backend.model.dto.response.LoginResponse;
@@ -20,9 +22,11 @@ import com.example.ecomerce_backend.security.principal.UserPrincipal;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.Instant;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -44,10 +49,7 @@ public class AuthService {
 
     public LoginResponse login(LoginRequest request, HttpServletResponse httpServletResponse) {
         // Xác thực thông tin đăng nhập
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                request.username(),
-                request.password()
-        );
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(request.username(), request.password());
         Authentication authentication = authenticationManager.authenticate(authenticationToken);
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         // Tạo token
@@ -58,27 +60,15 @@ public class AuthService {
         cookie.setHttpOnly(true);
         cookie.setSecure(true);
         cookie.setPath("/");
-        long maxAge = Duration.between(
-                Instant.now(),
-                refreshToken.getExpiresAt()
-        ).getSeconds();
+        long maxAge = Duration.between(Instant.now(), refreshToken.getExpiresAt()).getSeconds();
         cookie.setMaxAge((int) maxAge);
         httpServletResponse.addCookie(cookie);
-        return LoginResponse.builder()
-                .accessToken(accessToken)
-                .user(getAuthenticatedUser(userPrincipal.getUser()))
-                .build();
+        return LoginResponse.builder().accessToken(accessToken).user(getAuthenticatedUser(userPrincipal.getUser())).build();
     }
 
     public AuthenticatedUserResponse getAuthenticatedUser(User user) {
         UserInformation information = userInformationRepository.findByUserId(user.getId()).orElse(null);
-        return new AuthenticatedUserResponse(
-                user.getId(),
-                user.getUsername(),
-                information != null ? information.getFullName() : user.getUsername(),
-                information != null ? information.getAvatarUrl() : null,
-                user.getRole().getName()
-        );
+        return new AuthenticatedUserResponse(user.getId(), user.getUsername(), information != null ? information.getFullName() : user.getUsername(), information != null ? information.getAvatarUrl() : null, user.getRole().getName());
     }
 
     @Transactional
@@ -89,22 +79,22 @@ public class AuthService {
         }
         // Tạo tài khoản để đăng nhập
         Role customerRole = roleRepository.findByName("CUSTOMER").get();
-        User user = User.builder()
-                .username(request.username())
-                .email(request.email())
-                .password(passwordEncoder.encode(request.password()))
-                .role(customerRole)
-                .build();
+        User user = User.builder().username(request.username()).email(request.email()).password(passwordEncoder.encode(request.password())).role(customerRole).build();
         user = userRepository.save(user);
         // Tạo thông tin tài khoản
-        UserInformation userInformation = UserInformation.builder()
-                .user(user)
-                .fullName(request.fullName())
-                .dateOfBirth(request.dateOfBirth())
-                .gender(Gender.valueOf(request.gender().toUpperCase()))
-                .build();
+        UserInformation userInformation = UserInformation.builder().user(user).fullName(request.fullName()).dateOfBirth(request.dateOfBirth()).gender(Gender.valueOf(request.gender().toUpperCase())).build();
         userInformation = userInformationRepository.save(userInformation);
 
         return userMapper.mapToUserRegisterResponse(user, userInformation);
+    }
+
+    public void changePassword(ChangePasswordRequest request) {
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User user = userPrincipal.getUser();
+        if (!passwordEncoder.matches(request.oldPassword(), user.getPassword())) {
+            throw new NotMatchPasswordException("Mật khẩu cũ không khớp");
+        }
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
     }
 }
