@@ -122,6 +122,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(PaymentFailedException.class)
     public ResponseEntity<ApiDataResponse<Void>> handlePaymentFailedException(PaymentFailedException exception) {
+    @ExceptionHandler(NotMatchPasswordException.class)
+    public ResponseEntity<ApiDataResponse<Void>> handleNotMatchPasswordException(NotMatchPasswordException exception) {
         return new ResponseEntity<>(new ApiDataResponse<>(
                 false,
                 exception.getMessage(),
@@ -140,5 +142,7 @@ public class GlobalExceptionHandler {
                 null,
                 HttpStatus.BAD_GATEWAY
         ), HttpStatus.BAD_GATEWAY);
+                HttpStatus.BAD_REQUEST
+        ), HttpStatus.BAD_REQUEST);
     }
 }
