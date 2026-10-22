@@ -63,6 +63,12 @@ public class CatalogMapper {
         );
     }
 
+    /** Ảnh đầu tiên chưa bị xóa của sản phẩm; null nếu chưa có ảnh. */
+    public String thumbnailUrl(Product product) {
+        List<ProductImageResponse> images = activeImages(product);
+        return images.isEmpty() ? null : images.get(0).url();
+    }
+
     private List<ProductImageResponse> activeImages(Product product) {
         return product.getProductImages().stream()
                 .filter(image -> !Boolean.TRUE.equals(image.getIsDeleted()))

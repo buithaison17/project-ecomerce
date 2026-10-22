@@ -1,20 +1,19 @@
 package com.example.ecomerce_backend.model.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
+/** Thông tin nhận hàng. Mỗi đơn hàng lưu một bản riêng để đơn cũ không bị đổi khi người dùng sửa địa chỉ. */
 @Entity
 @Table(name = "user_deliveries")
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
+@Getter
+@Setter
 @Builder
 public class UserDelivery {
     @Id
@@ -23,6 +22,8 @@ public class UserDelivery {
     @ManyToOne
     @JoinColumn(nullable = false)
     private User user;
+    @Column(nullable = false)
+    private String receiverName;
     @Column(nullable = false)
     private String address;
     @Column(nullable = false)

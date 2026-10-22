@@ -119,4 +119,26 @@ public class GlobalExceptionHandler {
                 HttpStatus.CONFLICT
         ), HttpStatus.CONFLICT);
     }
+
+    @ExceptionHandler(PaymentFailedException.class)
+    public ResponseEntity<ApiDataResponse<Void>> handlePaymentFailedException(PaymentFailedException exception) {
+        return new ResponseEntity<>(new ApiDataResponse<>(
+                false,
+                exception.getMessage(),
+                null,
+                null,
+                HttpStatus.PAYMENT_REQUIRED
+        ), HttpStatus.PAYMENT_REQUIRED);
+    }
+
+    @ExceptionHandler(ImageStorageException.class)
+    public ResponseEntity<ApiDataResponse<Void>> handleImageStorageException(ImageStorageException exception) {
+        return new ResponseEntity<>(new ApiDataResponse<>(
+                false,
+                exception.getMessage(),
+                null,
+                null,
+                HttpStatus.BAD_GATEWAY
+        ), HttpStatus.BAD_GATEWAY);
+    }
 }

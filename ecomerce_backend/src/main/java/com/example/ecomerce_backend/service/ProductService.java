@@ -43,7 +43,7 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final InventoryRepository inventoryRepository;
     private final CategoryService categoryService;
-    private final FileStorageService fileStorageService;
+    private final ImageStorageService imageStorageService;
     private final CatalogMapper mapper;
 
     // ------------------------------------------------------------ Khách hàng (public)
@@ -135,11 +135,20 @@ public class ProductService {
         if (activeImages >= MAX_IMAGES_PER_PRODUCT) {
             throw new BadRequestException("Mỗi sản phẩm tối đa " + MAX_IMAGES_PER_PRODUCT + " ảnh");
         }
-        String url = fileStorageService.storeImage(file);
-        ProductImage image = ProductImage.builder().product(product).url(url).build();
-        product.getProductImages().add(image);
-        productRepository.saveAndFlush(product); // flush để image có id trước khi map response
-        log.info("Thêm ảnh cho sản phẩm id={} url={}", productId, url);
+        ImageStorageService.StoredImage stored = imageStorageService.upload(file);
+        try {
+            product.getProductImages().add(ProductImage.builder()
+                    .product(product)
+                    .url(stored.url())
+                    .publicId(stored.publicId())
+                    .build());
+            productRepository.saveAndFlush(product); // flush để image có id trước khi map response
+        } catch (RuntimeException e) {
+            // Lưu DB lỗi thì dọn ảnh vừa đẩy lên Cloudinary để không để lại ảnh mồ côi
+            imageStorageService.delete(stored.publicId());
+            throw e;
+        }
+        log.info("Thêm ảnh cho sản phẩm id={} url={}", productId, stored.url());
         return toDetail(product);
     }
 
@@ -151,6 +160,7 @@ public class ProductService {
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy ảnh id=" + imageId));
         image.setIsDeleted(true);
+        imageStorageService.delete(image.getPublicId()); // xóa trên Cloudinary (không làm lỗi request nếu thất bại)
         log.info("Xóa ảnh id={} của sản phẩm id={}", imageId, productId);
         return toDetail(product);
     }

@@ -25,7 +25,7 @@ Query của `GET /products`:
 | `page`, `size` | `0`, `12` | `size` tối đa 100 |
 
 `data` của danh sách: `{ content: [{ id, name, price, categoryId, categoryName, thumbnailUrl, stockQuantity, inStock }], page, size, totalElements, totalPages }`.
-`thumbnailUrl` có dạng `/uploads/xxx.jpg` → ghép với `http://localhost:8080` để hiển thị. `thumbnailUrl` là `null` nếu sản phẩm chưa có ảnh.
+`thumbnailUrl` và `images[].url` là **URL tuyệt đối (https) trên Cloudinary**, gán thẳng vào `<img src>`, không cần ghép thêm host. `thumbnailUrl` là `null` nếu sản phẩm chưa có ảnh.
 
 ## Admin
 
@@ -42,8 +42,8 @@ Query của `GET /products`:
 | POST | `/admin/products` | `{ name, description, price, categoryId, initialQuantity?, imageUrls? }` → tự tạo bản ghi tồn kho |
 | PUT | `/admin/products/{id}` | `{ name, description, price, categoryId }` (không đổi tồn kho/ảnh) |
 | DELETE | `/admin/products/{id}` | Ẩn (xóa mềm) khỏi catalog |
-| POST | `/admin/products/{id}/images` | `multipart/form-data`, field `file` (JPG/PNG/WEBP/GIF, ≤ 5MB, tối đa 10 ảnh/sản phẩm) |
-| DELETE | `/admin/products/{id}/images/{imageId}` | Xóa ảnh |
+| POST | `/admin/products/{id}/images` | `multipart/form-data`, field `file` (JPG/PNG/WEBP/GIF, ≤ 5MB, tối đa 10 ảnh/sản phẩm) → ảnh được đẩy lên Cloudinary (thư mục `ecommerce/products`) |
+| DELETE | `/admin/products/{id}/images/{imageId}` | Xóa ảnh (đồng thời xóa trên Cloudinary) |
 
 ### Tồn kho
 | Method | Path | Body / ghi chú |
@@ -56,9 +56,20 @@ Query của `GET /products`:
 `InventoryResponse`: `{ productId, productName, quantity, reservedQuantity, availableQuantity, lowStock, updatedAt }`.
 
 ## Mã lỗi
-`400` dữ liệu không hợp lệ · `401` chưa đăng nhập · `403` không đủ quyền · `404` không tìm thấy · `409` không đủ tồn kho.
+`400` dữ liệu không hợp lệ (gồm file không phải ảnh) · `401` chưa đăng nhập · `403` không đủ quyền · `404` không tìm thấy · `409` không đủ tồn kho · `502` Cloudinary lỗi hoặc chưa cấu hình.
 
 ## Dành cho phần Order (Checkout / Hủy đơn)
 `InventoryService.decreaseStock(productId, amount)` và `increaseStock(productId, amount)` đã khóa dòng
 (`SELECT ... FOR UPDATE`) và kiểm tra tồn khả dụng; gọi chúng **bên trong** `@Transactional` của checkout / hủy đơn
 để trừ/hoàn kho cùng giao dịch với việc tạo/hủy đơn.
+
+## Cấu hình Cloudinary (Backend)
+Lấy **Cloud name, API Key, API Secret** ở Cloudinary Dashboard rồi điền vào `ecomerce_backend/.env`:
+```
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+# tùy chọn: CLOUDINARY_FOLDER=ecommerce/products
+```
+Không commit file `.env`. Chưa điền thì app vẫn chạy, chỉ API upload ảnh trả 502 "Chưa cấu hình Cloudinary".
+Ảnh thêm bằng `imageUrls` khi tạo sản phẩm (URL ngoài) vẫn dùng được nhưng không bị xóa trên Cloudinary khi gỡ ảnh.
