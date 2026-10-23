@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAuthStore } from "../store/authStore";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
 interface Props {
     children: React.ReactNode;
@@ -10,6 +10,7 @@ interface Props {
 const ProtectedRoute = ({ children, role }: Props) => {
     const { accessToken, user, loadCurrentUser } = useAuthStore();
     const [loading, setLoading] = useState(true);
+    const location = useLocation();
 
     useEffect(() => {
         let cancelled = false;
@@ -40,7 +41,9 @@ const ProtectedRoute = ({ children, role }: Props) => {
 
     // Không có token hoặc chưa lấy được user
     if (!accessToken || !user) {
-        return <Navigate to="/login" replace />;
+        // Lưu trang hiện tại để redirect sau khi đăng nhập
+        localStorage.setItem("redirectAfterLogin", location.pathname + location.search);
+        return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
     // Chỉ cho phép đúng role được yêu cầu

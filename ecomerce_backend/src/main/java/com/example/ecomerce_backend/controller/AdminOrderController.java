@@ -1,19 +1,17 @@
 package com.example.ecomerce_backend.controller;
 
 import com.example.ecomerce_backend.constants.OrderStatus;
-import com.example.ecomerce_backend.model.dto.request.UpdateOrderStatusRequest;
+import com.example.ecomerce_backend.model.dto.request.OrderUpdateStatusRequest;
 import com.example.ecomerce_backend.model.dto.response.ApiDataResponse;
-import com.example.ecomerce_backend.model.dto.response.OrderDetailResponse;
-import com.example.ecomerce_backend.model.dto.response.OrderSummaryResponse;
-import com.example.ecomerce_backend.model.dto.response.PageResponse;
+import com.example.ecomerce_backend.model.dto.response.OrderResponse;
+import com.example.ecomerce_backend.model.dto.response.OrderItemResponse;
 import com.example.ecomerce_backend.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
+import java.util.List;
 
 /** Quản trị đơn hàng (FR-08) - chỉ ROLE_ADMIN (được chặn ở SecurityConfig qua /api/v1/admin/**). */
 @RestController
@@ -22,22 +20,20 @@ import java.time.LocalDate;
 public class AdminOrderController {
     private final OrderService orderService;
 
-    /** Toàn bộ đơn hàng của mọi người dùng; lọc theo trạng thái và/hoặc khoảng ngày tạo (yyyy-MM-dd, gồm cả 2 đầu). */
+    /** Toàn bộ đơn hàng của mọi người dùng; lọc theo trạng thái. */
     @GetMapping
-    public ResponseEntity<ApiDataResponse<PageResponse<OrderSummaryResponse>>> listAll(
-            @RequestParam(required = false) OrderStatus status,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+    public ResponseEntity<ApiDataResponse<List<OrderResponse>>> listAll(
+            @RequestParam(defaultValue = "1") Integer currentPage,
+            @RequestParam(defaultValue = "20") Integer pageSize,
+            @RequestParam(required = false) OrderStatus orderStatus
     ) {
         return ResponseEntity.ok(ApiDataResponse.ok("Lấy danh sách đơn hàng thành công",
-                orderService.listAllOrders(status, fromDate, toDate, page, size)));
+                orderService.findAll(currentPage, pageSize, orderStatus).getContent()));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiDataResponse<OrderDetailResponse>> get(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiDataResponse.ok("Lấy chi tiết đơn hàng thành công", orderService.getOrder(id)));
+    public ResponseEntity<ApiDataResponse<List<OrderItemResponse>>> get(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiDataResponse.ok("Lấy chi tiết đơn hàng thành công", orderService.getOrderDetail(id)));
     }
 
     /**
@@ -45,10 +41,10 @@ public class AdminOrderController {
      * Hủy đơn sẽ tự động hoàn số lượng về tồn kho.
      */
     @PatchMapping("/{id}/status")
-    public ResponseEntity<ApiDataResponse<OrderDetailResponse>> updateStatus(
-            @PathVariable Long id, @Valid @RequestBody UpdateOrderStatusRequest request
+    public ResponseEntity<ApiDataResponse<OrderResponse>> updateStatus(
+            @PathVariable Long id, @Valid @RequestBody OrderUpdateStatusRequest request
     ) {
         return ResponseEntity.ok(ApiDataResponse.ok("Cập nhật trạng thái đơn hàng thành công",
-                orderService.updateStatus(id, request.status())));
+                orderService.updateStatus(id, request)));
     }
 }

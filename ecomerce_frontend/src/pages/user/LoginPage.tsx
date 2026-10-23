@@ -3,7 +3,7 @@ import { message } from "antd";
 import { Eye, EyeOff, Lock, ShoppingBag, UserRound } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import * as z from "zod";
 import { useAuthStore } from "../../store/authStore";
 
@@ -18,6 +18,7 @@ const inputClass =
 
 export default function LoginPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const login = useAuthStore((state) => state.login);
     const [showPassword, setShowPassword] = useState(false);
     const {
@@ -33,7 +34,16 @@ export default function LoginPage() {
             await login(data);
             message.success("Đăng nhập thành công");
             const currentUser = useAuthStore.getState().user;
-            navigate(currentUser?.role === "ADMIN" ? "/admin" : "/");
+
+            // Lấy trang redirect từ localStorage hoặc từ state
+            const redirectPath = localStorage.getItem("redirectAfterLogin") ||
+                (location.state as any)?.from?.pathname ||
+                (currentUser?.role === "ADMIN" ? "/admin" : "/");
+
+            // Xóa redirect path sau khi sử dụng
+            localStorage.removeItem("redirectAfterLogin");
+
+            navigate(redirectPath);
         } catch {
             message.error("Tên đăng nhập hoặc mật khẩu không chính xác");
         }
