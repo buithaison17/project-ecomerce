@@ -6,7 +6,7 @@
       <excludeFolder url="file://$MODULE_DIR$/../../ecomerce_backend/.gradle" />
       <excludeFolder url="file://$MODULE_DIR$/../../ecomerce_backend/build" />
     </content>
-    <orderEntry type="jdk" jdkName="ms-17" jdkType="JavaSDK" />
+    <orderEntry type="jdk" jdkName="17" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

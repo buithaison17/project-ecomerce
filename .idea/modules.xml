@@ -2,6 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ecomerce_backend.iml" filepath="$PROJECT_DIR$/.idea/modules/ecomerce_backend.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ecomerce_backend.main.iml" filepath="$PROJECT_DIR$/.idea/modules/ecomerce_backend.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ecomerce_backend.test.iml" filepath="$PROJECT_DIR$/.idea/modules/ecomerce_backend.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/project-ecomerce.iml" filepath="$PROJECT_DIR$/.idea/project-ecomerce.iml" />
     </modules>
   </component>
