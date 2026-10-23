@@ -195,4 +195,116 @@ class OrderServiceTest {
         assertThrows(BadRequestException.class, () -> orderService.listAllOrders(null,
                 java.time.LocalDate.of(2026, 10, 20), java.time.LocalDate.of(2026, 10, 1), 0, 10));
     }
+
+    // ------------------------------------------------------------ cập nhật trạng thái (admin)
+
+    private Order order(OrderStatus status, PaymentMethod method, PaymentStatus paymentStatus, OrderItem... items) {
+        Order order = Order.builder()
+                .id(10L)
+                .user(user)
+                .delivery(UserDelivery.builder().receiverName("A").phoneNumber("0912345678").address("HN").build())
+                .totalAmount(BigDecimal.ZERO).shippingAmount(BigDecimal.ZERO).finalAmount(BigDecimal.ZERO)
+                .paymentMethod(method)
+                .paymentStatus(paymentStatus)
+                .orderStatus(status)
+                .build();
+        order.getItems().addAll(List.of(items));
+        return order;
+    }
+
+    private OrderItem orderItem(long productId, int quantity) {
+        Product product = Product.builder().id(productId).name("SP " + productId).build();
+        return OrderItem.builder().id(productId).product(product).quantity(quantity)
+                .unitPrice(BigDecimal.TEN).totalAmount(BigDecimal.TEN).build();
+    }
+
+    private void givenOrder(Order order) {
+        when(orderRepository.findWithLockById(10L)).thenReturn(Optional.of(order));
+    }
+
+    @Test
+    void updateStatus_followsLifecycleStepByStep() {
+        Order order = order(OrderStatus.PENDING, PaymentMethod.MOCK_CARD, PaymentStatus.PAID, orderItem(1L, 1));
+        givenOrder(order);
+
+        assertEquals(OrderStatus.PROCESSING, orderService.updateStatus(10L, OrderStatus.PROCESSING).orderStatus());
+        assertEquals(OrderStatus.SHIPPING, orderService.updateStatus(10L, OrderStatus.SHIPPING).orderStatus());
+        assertEquals(OrderStatus.COMPLETED, orderService.updateStatus(10L, OrderStatus.COMPLETED).orderStatus());
+        verify(inventoryService, never()).increaseStock(anyLong(), anyInt());
+    }
+
+    @Test
+    void updateStatus_skippingAStep_isRejected() {
+        givenOrder(order(OrderStatus.PENDING, PaymentMethod.COD, PaymentStatus.PENDING, orderItem(1L, 1)));
+        assertThrows(BadRequestException.class, () -> orderService.updateStatus(10L, OrderStatus.SHIPPING));
+        assertThrows(BadRequestException.class, () -> orderService.updateStatus(10L, OrderStatus.COMPLETED));
+    }
+
+    @Test
+    void updateStatus_goingBackwards_isRejected() {
+        givenOrder(order(OrderStatus.SHIPPING, PaymentMethod.COD, PaymentStatus.PENDING, orderItem(1L, 1)));
+        assertThrows(BadRequestException.class, () -> orderService.updateStatus(10L, OrderStatus.PENDING));
+    }
+
+    @Test
+    void updateStatus_sameStatus_isRejected() {
+        givenOrder(order(OrderStatus.PROCESSING, PaymentMethod.COD, PaymentStatus.PENDING, orderItem(1L, 1)));
+        assertThrows(BadRequestException.class, () -> orderService.updateStatus(10L, OrderStatus.PROCESSING));
+    }
+
+    @Test
+    void updateStatus_cancel_restocksEveryLineInProductIdOrder() {
+        Order order = order(OrderStatus.PENDING, PaymentMethod.COD, PaymentStatus.PENDING,
+                orderItem(9L, 3), orderItem(2L, 5), orderItem(4L, 1));
+        givenOrder(order);
+
+        OrderDetailResponse response = orderService.updateStatus(10L, OrderStatus.CANCELLED);
+
+        assertEquals(OrderStatus.CANCELLED, response.orderStatus());
+        org.mockito.InOrder inOrder = inOrder(inventoryService);
+        inOrder.verify(inventoryService).increaseStock(2L, 5);
+        inOrder.verify(inventoryService).increaseStock(4L, 1);
+        inOrder.verify(inventoryService).increaseStock(9L, 3);
+    }
+
+    @Test
+    void updateStatus_cancelFromProcessingAndShipping_isAllowed() {
+        for (OrderStatus from : new OrderStatus[]{OrderStatus.PROCESSING, OrderStatus.SHIPPING}) {
+            givenOrder(order(from, PaymentMethod.COD, PaymentStatus.PENDING, orderItem(1L, 2)));
+            assertEquals(OrderStatus.CANCELLED, orderService.updateStatus(10L, OrderStatus.CANCELLED).orderStatus());
+        }
+        verify(inventoryService, times(2)).increaseStock(1L, 2);
+    }
+
+    @Test
+    void updateStatus_finalStates_cannotChangeAndNeverRestockTwice() {
+        givenOrder(order(OrderStatus.CANCELLED, PaymentMethod.COD, PaymentStatus.PENDING, orderItem(1L, 2)));
+        assertThrows(BadRequestException.class, () -> orderService.updateStatus(10L, OrderStatus.CANCELLED));
+        assertThrows(BadRequestException.class, () -> orderService.updateStatus(10L, OrderStatus.PROCESSING));
+
+        givenOrder(order(OrderStatus.COMPLETED, PaymentMethod.COD, PaymentStatus.PAID, orderItem(1L, 2)));
+        assertThrows(BadRequestException.class, () -> orderService.updateStatus(10L, OrderStatus.CANCELLED));
+        verify(inventoryService, never()).increaseStock(anyLong(), anyInt());
+    }
+
+    @Test
+    void updateStatus_completingCodOrder_marksPaymentPaid() {
+        Order order = order(OrderStatus.SHIPPING, PaymentMethod.COD, PaymentStatus.PENDING, orderItem(1L, 1));
+        givenOrder(order);
+
+        OrderDetailResponse response = orderService.updateStatus(10L, OrderStatus.COMPLETED);
+
+        assertEquals(PaymentStatus.PAID, response.paymentStatus());
+    }
+
+    @Test
+    void updateStatus_unknownOrDeletedOrder_isNotFound() {
+        when(orderRepository.findWithLockById(10L)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> orderService.updateStatus(10L, OrderStatus.PROCESSING));
+
+        Order deleted = order(OrderStatus.PENDING, PaymentMethod.COD, PaymentStatus.PENDING);
+        deleted.setIsDeleted(true);
+        givenOrder(deleted);
+        assertThrows(ResourceNotFoundException.class, () -> orderService.updateStatus(10L, OrderStatus.PROCESSING));
+    }
 }

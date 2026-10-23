@@ -1,6 +1,7 @@
 package com.example.ecomerce_backend.service;
 
 import com.example.ecomerce_backend.constants.OrderStatus;
+import com.example.ecomerce_backend.constants.PaymentMethod;
 import com.example.ecomerce_backend.constants.PaymentStatus;
 import com.example.ecomerce_backend.exception.BadRequestException;
 import com.example.ecomerce_backend.exception.ResourceNotFoundException;
@@ -27,13 +28,31 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
     private static final int MAX_PAGE_SIZE = 100;
+
+    /**
+     * Chu trình đơn hàng theo SRS (FR-08): PENDING -> PROCESSING -> SHIPPING -> COMPLETED, đi từng bước một.
+     * Được hủy (CANCELLED) ở mọi bước trước khi hoàn tất; COMPLETED và CANCELLED là trạng thái cuối.
+     */
+    private static final Map<OrderStatus, Set<OrderStatus>> ALLOWED_TRANSITIONS = new EnumMap<>(OrderStatus.class);
+
+    static {
+        ALLOWED_TRANSITIONS.put(OrderStatus.PENDING, EnumSet.of(OrderStatus.PROCESSING, OrderStatus.CANCELLED));
+        ALLOWED_TRANSITIONS.put(OrderStatus.PROCESSING, EnumSet.of(OrderStatus.SHIPPING, OrderStatus.CANCELLED));
+        ALLOWED_TRANSITIONS.put(OrderStatus.SHIPPING, EnumSet.of(OrderStatus.COMPLETED, OrderStatus.CANCELLED));
+        ALLOWED_TRANSITIONS.put(OrderStatus.COMPLETED, EnumSet.noneOf(OrderStatus.class));
+        ALLOWED_TRANSITIONS.put(OrderStatus.CANCELLED, EnumSet.noneOf(OrderStatus.class));
+    }
 
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
@@ -146,6 +165,43 @@ public class OrderService {
             OrderStatus status, LocalDate fromDate, LocalDate toDate, int page, int size
     ) {
         return search(null, status, fromDate, toDate, page, size);
+    }
+
+    /**
+     * Admin cập nhật trạng thái đơn. Khóa dòng đơn hàng trong suốt giao dịch.
+     * - Chỉ cho phép chuyển theo ALLOWED_TRANSITIONS, sai chu trình trả 400.
+     * - Hủy đơn: tự động cộng hoàn số lượng từng dòng hàng về tồn kho (cùng transaction với việc đổi trạng thái).
+     * - Hoàn tất đơn COD: đánh dấu đã thu tiền (paymentStatus = PAID).
+     */
+    @Transactional
+    public OrderDetailResponse updateStatus(Long orderId, OrderStatus newStatus) {
+        Order order = orderRepository.findWithLockById(orderId)
+                .filter(o -> !Boolean.TRUE.equals(o.getIsDeleted()))
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng id=" + orderId));
+        OrderStatus current = order.getOrderStatus();
+        if (current == newStatus) {
+            throw new BadRequestException("Đơn hàng đã ở trạng thái " + current);
+        }
+        if (!ALLOWED_TRANSITIONS.get(current).contains(newStatus)) {
+            throw new BadRequestException("Không thể chuyển đơn hàng từ " + current + " sang " + newStatus);
+        }
+
+        if (newStatus == OrderStatus.CANCELLED) {
+            // Hoàn kho theo productId tăng dần để thứ tự khóa trùng với checkout, tránh deadlock
+            List<OrderItem> items = new ArrayList<>(order.getItems());
+            items.sort(Comparator.comparing(item -> item.getProduct().getId()));
+            for (OrderItem item : items) {
+                inventoryService.increaseStock(item.getProduct().getId(), item.getQuantity());
+            }
+        }
+        if (newStatus == OrderStatus.COMPLETED
+                && order.getPaymentMethod() == PaymentMethod.COD
+                && order.getPaymentStatus() == PaymentStatus.PENDING) {
+            order.setPaymentStatus(PaymentStatus.PAID);
+        }
+        order.setOrderStatus(newStatus);
+        log.info("Đổi trạng thái đơn hàng orderId={} {} -> {}", orderId, current, newStatus);
+        return orderMapper.toDetail(order);
     }
 
     @Transactional(readOnly = true)

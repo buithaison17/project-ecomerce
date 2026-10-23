@@ -1,11 +1,13 @@
 package com.example.ecomerce_backend.controller;
 
 import com.example.ecomerce_backend.constants.OrderStatus;
+import com.example.ecomerce_backend.model.dto.request.UpdateOrderStatusRequest;
 import com.example.ecomerce_backend.model.dto.response.ApiDataResponse;
 import com.example.ecomerce_backend.model.dto.response.OrderDetailResponse;
 import com.example.ecomerce_backend.model.dto.response.OrderSummaryResponse;
 import com.example.ecomerce_backend.model.dto.response.PageResponse;
 import com.example.ecomerce_backend.service.OrderService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -36,5 +38,17 @@ public class AdminOrderController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiDataResponse<OrderDetailResponse>> get(@PathVariable Long id) {
         return ResponseEntity.ok(ApiDataResponse.ok("Lấy chi tiết đơn hàng thành công", orderService.getOrder(id)));
+    }
+
+    /**
+     * Cập nhật trạng thái đơn theo chu trình PENDING -> PROCESSING -> SHIPPING -> COMPLETED (hoặc CANCELLED).
+     * Hủy đơn sẽ tự động hoàn số lượng về tồn kho.
+     */
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ApiDataResponse<OrderDetailResponse>> updateStatus(
+            @PathVariable Long id, @Valid @RequestBody UpdateOrderStatusRequest request
+    ) {
+        return ResponseEntity.ok(ApiDataResponse.ok("Cập nhật trạng thái đơn hàng thành công",
+                orderService.updateStatus(id, request.status())));
     }
 }

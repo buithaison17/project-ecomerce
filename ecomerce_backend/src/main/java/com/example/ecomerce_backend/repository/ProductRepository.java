@@ -16,4 +16,7 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 
     @Query("SELECT COUNT(p) > 0 FROM Product p WHERE p.category.id = :categoryId AND p.isDeleted = false")
     boolean existsActiveByCategoryId(@Param("categoryId") Long categoryId);
+
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.isDeleted = false")
+    long countActive();
 }
