@@ -32,7 +32,8 @@ export default function LoginPage() {
         try {
             await login(data);
             message.success("Đăng nhập thành công");
-            navigate("/");
+            const currentUser = useAuthStore.getState().user;
+            navigate(currentUser?.role === "ADMIN" ? "/admin" : "/");
         } catch {
             message.error("Tên đăng nhập hoặc mật khẩu không chính xác");
         }

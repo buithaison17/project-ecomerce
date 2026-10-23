@@ -2,22 +2,11 @@ import { create } from "zustand";
 import { loginService } from "../service/loginService";
 
 interface AuthUser {
+    username: string;
     fullName: string;
     avatarUrl: string | null;
     role: string;
 }
-
-// const getStoredUser = (): AuthUser | null => {
-//     const storedUser = localStorage.getItem("currentUser");
-//     if (!storedUser || storedUser === "undefined") return null;
-
-//     try {
-//         return JSON.parse(storedUser) as AuthUser;
-//     } catch {
-//         localStorage.removeItem("currentUser");
-//         return null;
-//     }
-// };
 
 interface State {
     loading: boolean;
@@ -25,6 +14,7 @@ interface State {
     user: AuthUser | null;
     login: (data: { username: string; password: string }) => Promise<void>;
     loadCurrentUser: () => Promise<void>;
+    logout: () => Promise<void>;
 }
 
 export const useAuthStore = create<State>((set) => ({
@@ -35,19 +25,58 @@ export const useAuthStore = create<State>((set) => ({
     login: async (data) => {
         try {
             set({ loading: true });
+
             const response = await loginService.login(data);
-            set({ accessToken: response.accessToken, user: response.user });
-            localStorage.setItem("accessToken", response.accessToken);
-            localStorage.setItem("currentUser", JSON.stringify(response.user));
+
+            // Giả sử loginService trả về dữ liệu có dạng:
+            // { user: AuthUser, accessToken: string }
+            const { user, accessToken } = response;
+
+            if (accessToken) {
+                localStorage.setItem("accessToken", accessToken);
+            }
+
+            set({
+                user,
+                accessToken: accessToken || "",
+            });
         } finally {
             set({ loading: false });
         }
     },
+
     loadCurrentUser: async () => {
-        if (!localStorage.getItem("accessToken")) return;
-        const user = await loginService.getCurrentUser();
-        console.log(user);
-        set({ user: user.data });
-        localStorage.setItem("currentUser", JSON.stringify(user));
+        const token = useAuthStore.getState().accessToken;
+
+        if (!token) {
+            set({ user: null });
+            return;
+        }
+
+        try {
+            const response = await loginService.getCurrentUser();
+
+            // Nếu service trả về AxiosResponse, sử dụng response.data.
+            // Nếu service đã trả về user trực tiếp, sử dụng response.
+            const user = response.data ?? response;
+
+            set({ user });
+        } catch {
+            set({ user: null });
+        }
+    },
+
+    logout: async () => {
+        try {
+            await loginService.logout();
+        } finally {
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("currentUser");
+
+            set({
+                user: null,
+                accessToken: "",
+            });
+        }
     },
 }));

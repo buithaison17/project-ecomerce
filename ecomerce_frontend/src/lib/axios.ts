@@ -6,49 +6,61 @@ export const api = axios.create({
     withCredentials: true,
 });
 
+// Thêm access token vào request
 api.interceptors.request.use(
     (config) => {
         const token = useAuthStore.getState().accessToken;
+
         const isAuthApi =
             config.url?.includes("/auth/login") ||
             config.url?.includes("/auth/register") ||
-            config.url?.includes("/products") ||
             config.url?.includes("/auth/refresh");
+
         if (token && !isAuthApi) {
-            config.headers["Authorization"] = `Bearer ${token}`;
+            config.headers.Authorization = `Bearer ${token}`;
         }
+
         return config;
     },
-    (error) => {
-        return Promise.reject(error);
-    },
+    (error) => Promise.reject(error),
 );
 
+// Xử lý response
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
-        if (
-            originalRequest.url.includes("/auth/login") ||
-            originalRequest.url.includes("/auth/register") ||
-            originalRequest.url.includes("/products") ||
-            originalRequest.url.includes("/auth/refresh")
-        ) {
+
+        if (!originalRequest) {
             return Promise.reject(error);
         }
-        // Nếu lỗi là 401 Unauthorized và request chưa được thử lại
-        if (error.response?.status === 403 && !originalRequest._retry) {
+
+        const url = originalRequest.url ?? "";
+
+        const isAuthApi =
+            url.includes("/auth/login") ||
+            url.includes("/auth/register") ||
+            url.includes("/auth/refresh");
+
+        if (isAuthApi) {
+            return Promise.reject(error);
+        }
+
+        // Không thử lại request nhiều lần
+        if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
 
-            try {
-                // await useAuthStore.getState().refresh();
-                const token = useAuthStore.getState().accessToken;
-                originalRequest.headers["Authorization"] = `Bearer ${token}`;
-                return api(originalRequest);
-            } catch (refreshError) {
-                return Promise.reject(refreshError);
+            const token = useAuthStore.getState().accessToken;
+
+            if (!token) {
+                return Promise.reject(error);
             }
+
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+
+            return api(originalRequest);
         }
+
         return Promise.reject(error);
     },
 );
