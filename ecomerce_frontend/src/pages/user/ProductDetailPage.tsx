@@ -1,8 +1,8 @@
 import { ArrowLeft, PackageCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { catalogService } from "../service/catalogService";
-import type { Product } from "../types/catalog";
+import type { Product } from "../../types/catalog";
+import { catalogService } from "../../service/catalogService";
 
 const formatPrice = (price: number) =>
     new Intl.NumberFormat("vi-VN", {
@@ -17,16 +17,22 @@ export default function ProductDetailPage() {
     const [error, setError] = useState("");
 
     useEffect(() => {
-        catalogService.getProduct(id).then(setProduct).catch(() => {
-            setError("Không thể tải chi tiết sản phẩm.");
-        });
+        catalogService
+            .getProduct(id)
+            .then(setProduct)
+            .catch(() => {
+                setError("Không thể tải chi tiết sản phẩm.");
+            });
     }, [id]);
 
     if (error) {
         return (
             <div className="mx-auto max-w-7xl px-4 py-16">
                 <p className="text-rose-600">{error}</p>
-                <Link to="/products" className="mt-4 inline-block text-indigo-600">
+                <Link
+                    to="/products"
+                    className="mt-4 inline-block text-indigo-600"
+                >
                     Quay lại sản phẩm
                 </Link>
             </div>
@@ -58,7 +64,11 @@ export default function ProductDetailPage() {
 
             <div className="grid gap-10 lg:grid-cols-2">
                 <div className="overflow-hidden rounded-2xl bg-white">
-                    <img src={imageUrl} alt={product.name} className="aspect-square w-full object-cover" />
+                    <img
+                        src={imageUrl}
+                        alt={product.name}
+                        className="aspect-square w-full object-cover"
+                    />
                 </div>
                 <div>
                     <p className="text-sm font-bold uppercase tracking-wide text-indigo-600">
@@ -73,9 +83,19 @@ export default function ProductDetailPage() {
                     <div className="mt-5 flex items-center gap-2 text-sm">
                         <PackageCheck
                             size={18}
-                            className={product.inStock ? "text-emerald-600" : "text-rose-600"}
+                            className={
+                                product.inStock
+                                    ? "text-emerald-600"
+                                    : "text-rose-600"
+                            }
                         />
-                        <span className={product.inStock ? "font-semibold text-emerald-700" : "font-semibold text-rose-700"}>
+                        <span
+                            className={
+                                product.inStock
+                                    ? "font-semibold text-emerald-700"
+                                    : "font-semibold text-rose-700"
+                            }
+                        >
                             {product.inStock
                                 ? `Còn hàng (${product.stockQuantity} sản phẩm)`
                                 : "Tạm hết hàng"}
@@ -84,7 +104,8 @@ export default function ProductDetailPage() {
                     <div className="mt-8 border-t border-slate-200 pt-6">
                         <h2 className="font-bold">Mô tả sản phẩm</h2>
                         <p className="mt-3 whitespace-pre-line leading-7 text-slate-600">
-                            {product.description || "Thông tin mô tả đang được cập nhật."}
+                            {product.description ||
+                                "Thông tin mô tả đang được cập nhật."}
                         </p>
                     </div>
                 </div>

@@ -7,17 +7,17 @@ interface AuthUser {
     role: string;
 }
 
-const getStoredUser = (): AuthUser | null => {
-    const storedUser = localStorage.getItem("currentUser");
-    if (!storedUser || storedUser === "undefined") return null;
+// const getStoredUser = (): AuthUser | null => {
+//     const storedUser = localStorage.getItem("currentUser");
+//     if (!storedUser || storedUser === "undefined") return null;
 
-    try {
-        return JSON.parse(storedUser) as AuthUser;
-    } catch {
-        localStorage.removeItem("currentUser");
-        return null;
-    }
-};
+//     try {
+//         return JSON.parse(storedUser) as AuthUser;
+//     } catch {
+//         localStorage.removeItem("currentUser");
+//         return null;
+//     }
+// };
 
 interface State {
     loading: boolean;
@@ -30,7 +30,7 @@ interface State {
 export const useAuthStore = create<State>((set) => ({
     loading: false,
     accessToken: localStorage.getItem("accessToken") || "",
-    user: getStoredUser(),
+    user: null,
 
     login: async (data) => {
         try {
@@ -46,7 +46,8 @@ export const useAuthStore = create<State>((set) => ({
     loadCurrentUser: async () => {
         if (!localStorage.getItem("accessToken")) return;
         const user = await loginService.getCurrentUser();
-        set({ user });
+        console.log(user);
+        set({ user: user.data });
         localStorage.setItem("currentUser", JSON.stringify(user));
     },
 }));

@@ -1,9 +1,6 @@
 package com.example.ecomerce_backend.model.mapper;
 
-import com.example.ecomerce_backend.model.dto.response.UserDeliveryResponse;
-import com.example.ecomerce_backend.model.dto.response.UserRegisterResponse;
-import com.example.ecomerce_backend.model.dto.response.UserResponse;
-import com.example.ecomerce_backend.model.dto.response.UserInformationResponse;
+import com.example.ecomerce_backend.model.dto.response.*;
 import com.example.ecomerce_backend.model.entity.User;
 import com.example.ecomerce_backend.model.entity.UserDelivery;
 import com.example.ecomerce_backend.model.entity.UserInformation;
@@ -26,4 +23,11 @@ public interface UserMapper {
     UserDeliveryResponse toUserDeliveryResponse(UserDelivery userDelivery);
 
     List<UserDeliveryResponse> toUserDeliveryResponseList(List<UserDelivery> userDeliveries);
+
+    @Mapping(source = "user.id", target = "id")
+    @Mapping(source = "user.username", target = "username")
+    @Mapping(source = "user.role.name", target = "role")
+    @Mapping(source = "userInformation.fullName", target = "fullName")
+    @Mapping(source = "userInformation.avatarUrl", target = "avatarUrl")
+    AuthenticatedUserResponse toAuthenticatedUserResponse(User user, UserInformation userInformation);
 }

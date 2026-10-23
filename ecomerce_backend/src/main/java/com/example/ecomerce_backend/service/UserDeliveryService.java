@@ -9,6 +9,10 @@ import com.example.ecomerce_backend.model.mapper.UserMapper;
 import com.example.ecomerce_backend.repository.UserDeliveryRepository;
 import com.example.ecomerce_backend.security.principal.UserPrincipal;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -20,11 +24,13 @@ public class UserDeliveryService {
     private final UserDeliveryRepository userDeliveryRepository;
     private final UserMapper userMapper;
 
-    public List<UserDeliveryResponse> findAll() {
+    public List<UserDeliveryResponse> findAll(Integer currentPage, Integer pageSize) {
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         User user = userPrincipal.getUser();
-        List<UserDelivery> userDeliveryResponses = userDeliveryRepository.findByUser(user);
-        return userMapper.toUserDeliveryResponseList(userDeliveryResponses);
+        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
+        Pageable pageable = PageRequest.of(currentPage - 1, pageSize, sort);
+        Page<UserDelivery> userDeliveryResponses = userDeliveryRepository.findByUser(user, pageable);
+        return userDeliveryResponses.map(userMapper::toUserDeliveryResponse).toList();
     }
 
     public UserDeliveryResponse createUserDelivery(UserDeliveryRequest request) {

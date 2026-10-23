@@ -12,6 +12,7 @@ api.interceptors.request.use(
         const isAuthApi =
             config.url?.includes("/auth/login") ||
             config.url?.includes("/auth/register") ||
+            config.url?.includes("/products") ||
             config.url?.includes("/auth/refresh");
         if (token && !isAuthApi) {
             config.headers["Authorization"] = `Bearer ${token}`;
@@ -30,6 +31,7 @@ api.interceptors.response.use(
         if (
             originalRequest.url.includes("/auth/login") ||
             originalRequest.url.includes("/auth/register") ||
+            originalRequest.url.includes("/products") ||
             originalRequest.url.includes("/auth/refresh")
         ) {
             return Promise.reject(error);
