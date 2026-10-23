@@ -3,7 +3,7 @@ import { message } from "antd";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import * as z from "zod";
-import { api } from "../lib/axios";
+import { api } from "../../lib/axios";
 
 const schema = z.object({
     username: z.string().min(3, "Tên đăng nhập tối thiểu 3 ký tự"),
@@ -16,7 +16,8 @@ const schema = z.object({
 
 type RegisterForm = z.infer<typeof schema>;
 
-const inputClass = "w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-indigo-500";
+const inputClass =
+    "w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-indigo-500";
 
 export default function RegisterPage() {
     const navigate = useNavigate();
@@ -35,7 +36,9 @@ export default function RegisterPage() {
             message.success("Đăng ký thành công. Hãy đăng nhập.");
             navigate("/login");
         } catch {
-            message.error("Không thể đăng ký. Email hoặc tên đăng nhập có thể đã tồn tại.");
+            message.error(
+                "Không thể đăng ký. Email hoặc tên đăng nhập có thể đã tồn tại.",
+            );
         }
     };
 
@@ -50,25 +53,61 @@ export default function RegisterPage() {
                     Đăng ký để bắt đầu trải nghiệm mua sắm.
                 </p>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
-                    <FieldError error={errors.username?.message} label="Tên đăng nhập">
-                        <input {...register("username")} className={inputClass} />
+                <form
+                    onSubmit={handleSubmit(onSubmit)}
+                    className="mt-6 space-y-4"
+                >
+                    <FieldError
+                        error={errors.username?.message}
+                        label="Tên đăng nhập"
+                    >
+                        <input
+                            {...register("username")}
+                            className={inputClass}
+                        />
                     </FieldError>
-                    <FieldError error={errors.fullName?.message} label="Họ và tên">
-                        <input {...register("fullName")} className={inputClass} />
+                    <FieldError
+                        error={errors.fullName?.message}
+                        label="Họ và tên"
+                    >
+                        <input
+                            {...register("fullName")}
+                            className={inputClass}
+                        />
                     </FieldError>
                     <FieldError error={errors.email?.message} label="Email">
-                        <input type="email" {...register("email")} className={inputClass} />
+                        <input
+                            type="email"
+                            {...register("email")}
+                            className={inputClass}
+                        />
                     </FieldError>
-                    <FieldError error={errors.password?.message} label="Mật khẩu">
-                        <input type="password" {...register("password")} className={inputClass} />
+                    <FieldError
+                        error={errors.password?.message}
+                        label="Mật khẩu"
+                    >
+                        <input
+                            type="password"
+                            {...register("password")}
+                            className={inputClass}
+                        />
                     </FieldError>
-                    <FieldError error={errors.dateOfBirth?.message} label="Ngày sinh">
-                        <input type="date" {...register("dateOfBirth")} className={inputClass} />
+                    <FieldError
+                        error={errors.dateOfBirth?.message}
+                        label="Ngày sinh"
+                    >
+                        <input
+                            type="date"
+                            {...register("dateOfBirth")}
+                            className={inputClass}
+                        />
                     </FieldError>
                     <label className="block text-sm font-semibold">
                         Giới tính
-                        <select {...register("gender")} className={`${inputClass} mt-1 bg-white`}>
+                        <select
+                            {...register("gender")}
+                            className={`${inputClass} mt-1 bg-white`}
+                        >
                             <option value="MALE">Nam</option>
                             <option value="FEMALE">Nữ</option>
                         </select>
@@ -105,7 +144,11 @@ function FieldError({
         <label className="block text-sm font-semibold">
             {label}
             <span className="mt-1 block">{children}</span>
-            {error && <span className="mt-1 block text-xs font-normal text-rose-600">{error}</span>}
+            {error && (
+                <span className="mt-1 block text-xs font-normal text-rose-600">
+                    {error}
+                </span>
+            )}
         </label>
     );
 }

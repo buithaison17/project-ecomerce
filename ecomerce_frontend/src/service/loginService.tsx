@@ -1,4 +1,4 @@
-    import { api } from "../lib/axios";
+import { api } from "../lib/axios";
 
 export const loginService = {
     login: async (data: { username: string; password: string }) => {
@@ -6,7 +6,7 @@ export const loginService = {
         return response.data;
     },
     getCurrentUser: async () => {
-        const response = await api.get("/users/me");
+        const response = await api.get("/auth/me");
         return response.data;
     },
 };

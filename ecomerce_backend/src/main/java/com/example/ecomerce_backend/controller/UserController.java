@@ -54,11 +54,14 @@ public class UserController {
     }
 
     @GetMapping("/deliveries")
-    public ResponseEntity<ApiDataResponse<List<UserDeliveryResponse>>> findAll() {
+    public ResponseEntity<ApiDataResponse<List<UserDeliveryResponse>>> findAll(
+            @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
+            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize
+    ) {
         return new ResponseEntity<>(new ApiDataResponse<>(
                 true,
                 "Lấy danh sách địa chỉ nhận hàng thành công",
-                userDeliveryService.findAll(),
+                userDeliveryService.findAll(currentPage, pageSize),
                 null,
                 HttpStatus.OK
         ), HttpStatus.OK);
@@ -82,7 +85,7 @@ public class UserController {
     ) {
         return new ResponseEntity<>(new ApiDataResponse<>(
                 true,
-                "Tạo địa chỉ nhận hàng thành công",
+                "Cập nhật địa chỉ nhận hàng thành công",
                 userDeliveryService.updateUserDelivery(id, request),
                 null,
                 HttpStatus.OK
@@ -96,7 +99,7 @@ public class UserController {
         userDeliveryService.deleteUserDelivery(id);
         return new ResponseEntity<>(new ApiDataResponse<>(
                 true,
-                "Tạo địa chỉ nhận hàng thành công",
+                "Xóa địa chỉ nhận hàng thành công",
                 null,
                 null,
                 HttpStatus.OK

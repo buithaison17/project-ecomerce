@@ -3,6 +3,7 @@ package com.example.ecomerce_backend.service;
 import com.example.ecomerce_backend.constants.Gender;
 import com.example.ecomerce_backend.exception.NotMatchPasswordException;
 import com.example.ecomerce_backend.exception.ResourceExistedException;
+import com.example.ecomerce_backend.exception.ResourceNotFoundException;
 import com.example.ecomerce_backend.model.dto.request.ChangePasswordRequest;
 import com.example.ecomerce_backend.model.dto.request.LoginRequest;
 import com.example.ecomerce_backend.model.dto.request.RegisterRequest;
@@ -96,5 +97,13 @@ public class AuthService {
         }
         user.setPassword(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
+    }
+
+    public AuthenticatedUserResponse getMe() {
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User user = userPrincipal.getUser();
+        UserInformation userInformation = userInformationRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User information not found"));
+        return userMapper.toAuthenticatedUserResponse(user, userInformation);
     }
 }

@@ -3,6 +3,7 @@ package com.example.ecomerce_backend.controller;
 import com.example.ecomerce_backend.model.dto.request.LoginRequest;
 import com.example.ecomerce_backend.model.dto.request.RegisterRequest;
 import com.example.ecomerce_backend.model.dto.response.ApiDataResponse;
+import com.example.ecomerce_backend.model.dto.response.AuthenticatedUserResponse;
 import com.example.ecomerce_backend.model.dto.response.LoginResponse;
 import com.example.ecomerce_backend.model.dto.response.UserRegisterResponse;
 import com.example.ecomerce_backend.service.AuthService;
@@ -51,6 +52,17 @@ public class AuthController {
                 true,
                 "Đăng xuất thành công",
                 null,
+                null,
+                HttpStatus.OK
+        ), HttpStatus.OK);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiDataResponse<AuthenticatedUserResponse>> getMe() {
+        return new ResponseEntity<>(new ApiDataResponse<>(
+                true,
+                "Lấy thông tin người dùng thành công",
+                authService.getMe(),
                 null,
                 HttpStatus.OK
         ), HttpStatus.OK);
