@@ -47,9 +47,10 @@ export const router = createBrowserRouter([
     {
         path: "/admin",
         element: (
-            // <ProtectedRoute role="ADMIN">
-            <AdminLayout />
-            // </ProtectedRoute>
+            <ProtectedRoute role="ADMIN">
+                <AdminLayout />
+                //{" "}
+            </ProtectedRoute>
         ),
         children: [
             { index: true, element: <AdminDashboardPage /> },
