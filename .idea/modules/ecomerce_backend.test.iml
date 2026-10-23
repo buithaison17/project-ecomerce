@@ -6,7 +6,7 @@
     <content url="file://$MODULE_DIR$/../../ecomerce_backend/src/test">
       <sourceFolder url="file://$MODULE_DIR$/../../ecomerce_backend/src/test/java" isTestSource="true" />
     </content>
-    <orderEntry type="jdk" jdkName="ms-17" jdkType="JavaSDK" />
+    <orderEntry type="jdk" jdkName="17" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="ecomerce_backend.main" />
     <orderEntry type="library" name="Gradle: org.springframework.boot:spring-boot-starter-data-jpa:4.1.1" level="project" />

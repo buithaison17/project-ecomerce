@@ -7,7 +7,7 @@
       <sourceFolder url="file://$MODULE_DIR$/../../ecomerce_backend/src/main/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../../ecomerce_backend/src/main/resources" type="java-resource" />
     </content>
-    <orderEntry type="jdk" jdkName="ms-17" jdkType="JavaSDK" />
+    <orderEntry type="jdk" jdkName="17" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" scope="PROVIDED" name="Gradle: org.projectlombok:lombok:1.18.46" level="project" />
     <orderEntry type="library" name="Gradle: org.springframework.boot:spring-boot-starter-data-jpa:4.1.1" level="project" />
