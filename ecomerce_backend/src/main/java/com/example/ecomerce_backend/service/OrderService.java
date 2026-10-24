@@ -19,6 +19,7 @@ import com.example.ecomerce_backend.repository.OrderRepository;
 import com.example.ecomerce_backend.repository.UserDeliveryRepository;
 import com.example.ecomerce_backend.security.principal.UserPrincipal;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -143,12 +145,29 @@ public class OrderService {
     public OrderResponse updateStatus(Long id, OrderUpdateStatusRequest request) {
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         User user = userPrincipal.getUser();
-        Order order = orderRepository.findByIdAndUser(id, user)
+        Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Đơn hàng không tồn tại"));
-        if (order.getOrderStatus().equals(OrderStatus.CANCELLED)) {
-            return cancelOrder(id);
+        if (request.status().equals(OrderStatus.CANCELLED)) {
+            if (user.getRole().getName().equals("ADMIN")) {
+                return cancelOrder(order);
+            } else {
+                return cancelOrder(id);
+            }
         }
-        order.setOrderStatus(OrderStatus.valueOf(request.status()));
+        order.setOrderStatus(request.status());
+        orderRepository.save(order);
+        return orderMapper.toOrderResponse(order);
+    }
+
+    @Transactional
+    public OrderResponse cancelOrder(Order order) {
+        order.setOrderStatus(OrderStatus.CANCELLED);
+        List<OrderItem> orderItems = orderItemRepository.findByOrder(order);
+        // Hoàn trả số lượng
+        orderItems.forEach(item -> inventoryService.increaseStock(
+                item.getProduct().getId(),
+                item.getQuantity()
+        ));
         orderRepository.save(order);
         return orderMapper.toOrderResponse(order);
     }
@@ -161,9 +180,6 @@ public class OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Đơn hàng không tồn tại"));
         if (order.getOrderStatus() != OrderStatus.PENDING) {
             throw new BadRequestException("Đơn hàng không thể hủy");
-        }
-        if (order.getOrderStatus() == OrderStatus.CANCELLED) {
-            throw new BadRequestException("Đơn hàng đã hủy trước đó");
         }
         order.setOrderStatus(OrderStatus.CANCELLED);
         List<OrderItem> orderItems = orderItemRepository.findByOrder(order);

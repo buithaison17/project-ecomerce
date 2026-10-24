@@ -1,11 +1,11 @@
 package com.example.ecomerce_backend.model.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
+import com.example.ecomerce_backend.constants.OrderStatus;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
 public record OrderUpdateStatusRequest(
-        @NotBlank(message = "Trạng thái không được để trống")
-        @Pattern(regexp = "^(PENDING|SHIPPING|DELIVERED|CANCELLED)$", message = "Trạng thái không hợp lệ")
-        String status
+        @NotNull(message = "Trạng thái không được để trống")
+        OrderStatus status
 ) {
 }

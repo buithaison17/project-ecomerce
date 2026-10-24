@@ -6,8 +6,13 @@ export const loginService = {
         return response.data;
     },
     getCurrentUser: async () => {
-        const response = await api.get("/auth/me");
-        return response.data;
+        try {
+            const response = await api.get("/users/me");
+            return response.data;
+        } catch {
+            const response = await api.get("/auth/me");
+            return response.data;
+        }
     },
     logout: async () => {
         await api.post("/auth/logout");

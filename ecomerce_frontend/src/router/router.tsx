@@ -15,6 +15,7 @@ import AdminOrdersPage from "../pages/admin/AdminOrdersPage";
 import AdminInventoryPage from "../pages/admin/AdminInventoryPage";
 import AdminCategoriesPage from "../pages/admin/AdminCategoriesPage";
 import AdminProductsPage from "../pages/admin/AdminProductsPage";
+import OrdersPage from "../pages/user/OrdersPage";
 import ProtectedRoute from "./ProtectedRoute";
 
 export const router = createBrowserRouter([
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
                 path: "/checkout/success",
                 element: <ProtectedRoute role="CUSTOMER"><CheckoutSuccessPage /></ProtectedRoute>,
             },
+            { path: "/orders", element: <ProtectedRoute role="CUSTOMER"><OrdersPage /></ProtectedRoute> },
             { path: "/profile", element: <ProtectedRoute role="CUSTOMER"><UserProfilePage /></ProtectedRoute> },
         ],
     },

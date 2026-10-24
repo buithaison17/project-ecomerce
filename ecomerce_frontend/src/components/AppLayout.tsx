@@ -15,6 +15,7 @@ import { useAuthStore } from "../store/authStore";
 import { catalogService } from "../service/catalogService";
 import type { Category } from "../types/catalog";
 import CartButton from "./CartButton";
+import { formatProductImageUrl } from "../lib/image";
 
 export default function AppLayout() {
     const navigate = useNavigate();
@@ -50,7 +51,9 @@ export default function AppLayout() {
         navigate("/");
     };
 
-    const avatarUrl = user?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName || "ShopNova")}&background=4f46e5&color=fff&bold=true`;
+    const avatarUrl = user?.avatarUrl
+        ? formatProductImageUrl(user.avatarUrl)
+        : `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName || "ShopNova")}&background=4f46e5&color=fff&bold=true`;
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -75,6 +78,7 @@ export default function AppLayout() {
                             {catalogOpen && <CategoryMegaMenu categories={categories} activeCategory={activeCategory} onSelect={(category) => setActiveCategory(category)} onNavigate={() => setCatalogOpen(false)} />}
                         </div>
                         <Link to="/products" className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-700">Sản phẩm</Link>
+                        <Link to="/orders" className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-700">Đơn hàng</Link>
                     </nav>
 
                     <form onSubmit={submitSearch} className="hidden max-w-md flex-1 lg:block">
@@ -93,7 +97,16 @@ export default function AppLayout() {
                                     <span className="hidden max-w-32 truncate text-sm font-bold sm:block">{user.fullName}</span>
                                     <ChevronDown size={16} className="hidden text-slate-500 sm:block" />
                                 </button>
-                                {profileOpen && <ProfileMenu avatarUrl={avatarUrl} fullName={user.fullName} username={user.username} role={user.role} onLogout={handleLogout} />}
+                                {profileOpen && (
+                                    <ProfileMenu
+                                        avatarUrl={avatarUrl}
+                                        fullName={user.fullName}
+                                        username={user.username}
+                                        role={user.role}
+                                        onLogout={handleLogout}
+                                        onClose={() => setProfileOpen(false)}
+                                    />
+                                )}
                             </div>
                         ) : (
                             <Link to="/login" className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-700">
@@ -111,8 +124,60 @@ export default function AppLayout() {
     );
 }
 
-function ProfileMenu({ avatarUrl, fullName, username, role, onLogout }: { avatarUrl: string; fullName: string; username: string; role: string; onLogout: () => void }) {
-    return <div className="absolute right-0 mt-2 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-300/50"><div className="bg-gradient-to-br from-indigo-600 to-violet-600 p-5 text-white"><div className="flex items-center gap-3"><img src={avatarUrl} alt="Ảnh đại diện" className="h-12 w-12 rounded-full border-2 border-white/70 object-cover" /><div className="min-w-0"><p className="truncate font-bold">{fullName}</p><p className="truncate text-sm text-indigo-100">@{username}</p></div></div></div><div className="p-4"><div className="rounded-xl bg-slate-50 p-3"><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Vai trò</p><p className="mt-1 text-sm font-bold text-slate-700">{role === "ADMIN" ? "Quản trị viên" : "Khách hàng"}</p></div><button type="button" onClick={onLogout} className="mt-3 flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold text-rose-600 transition hover:bg-rose-50"><LogOut size={17} /> Đăng xuất</button></div></div>;
+function ProfileMenu({ avatarUrl, fullName, username, role, onLogout, onClose }: { avatarUrl: string; fullName: string; username: string; role: string; onLogout: () => void; onClose: () => void }) {
+    return (
+        <div className="absolute right-0 mt-2 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-300/50">
+            <div className="bg-gradient-to-br from-indigo-600 to-violet-600 p-5 text-white">
+                <div className="flex items-center gap-3">
+                    <img src={avatarUrl} alt="Ảnh đại diện" className="h-12 w-12 rounded-full border-2 border-white/70 object-cover" />
+                    <div className="min-w-0">
+                        <p className="truncate font-bold">{fullName}</p>
+                        <p className="truncate text-sm text-indigo-100">@{username}</p>
+                    </div>
+                </div>
+            </div>
+            <div className="p-3">
+                <div className="mb-2 rounded-xl bg-slate-50 p-2.5">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Vai trò</p>
+                    <p className="mt-0.5 text-sm font-bold text-slate-700">{role === "ADMIN" ? "Quản trị viên" : "Khách hàng"}</p>
+                </div>
+                <div className="space-y-1">
+                    <Link
+                        to="/profile"
+                        onClick={onClose}
+                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
+                    >
+                        <CircleUserRound size={17} className="text-indigo-600" />
+                        Thông tin tài khoản
+                    </Link>
+                    <Link
+                        to="/orders"
+                        onClick={onClose}
+                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
+                    >
+                        <ShoppingBag size={17} className="text-indigo-600" />
+                        Lịch sử đơn hàng
+                    </Link>
+                    {role === "ADMIN" && (
+                        <Link
+                            to="/admin"
+                            onClick={onClose}
+                            className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-bold text-indigo-600 hover:bg-indigo-50"
+                        >
+                            Quản trị hệ thống
+                        </Link>
+                    )}
+                </div>
+                <button
+                    type="button"
+                    onClick={onLogout}
+                    className="mt-2 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-rose-600 transition hover:bg-rose-50"
+                >
+                    <LogOut size={17} /> Đăng xuất
+                </button>
+            </div>
+        </div>
+    );
 }
 
 function CategoryMegaMenu({

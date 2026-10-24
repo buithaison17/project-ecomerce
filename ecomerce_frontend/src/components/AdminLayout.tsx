@@ -16,6 +16,7 @@ import {
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
+import { formatProductImageUrl } from "../lib/image";
 
 const navigation = [
     { to: "/admin", label: "Tổng quan", icon: LayoutDashboard, end: true },
@@ -95,7 +96,7 @@ export default function AdminLayout() {
                         <button className="relative rounded-xl p-2.5 text-slate-300 transition hover:bg-white/10" aria-label="Thông báo"><Bell size={19} /><span className="absolute right-2 top-2 size-2 rounded-full bg-cyan-400" /></button>
                         <div className="relative">
                             <button className="flex items-center gap-2 rounded-xl p-1.5 transition hover:bg-white/10" onClick={() => setProfileOpen(!profileOpen)}>
-                                {user?.avatarUrl ? <img src={user.avatarUrl} className="size-9 rounded-lg object-cover" /> : <span className="grid size-9 place-items-center rounded-lg bg-cyan-400 font-bold text-[#071a3a]">{(user?.fullName || "A").charAt(0).toUpperCase()}</span>}
+                                {user?.avatarUrl ? <img src={formatProductImageUrl(user.avatarUrl)} className="size-9 rounded-lg object-cover" /> : <span className="grid size-9 place-items-center rounded-lg bg-cyan-400 font-bold text-[#071a3a]">{(user?.fullName || "A").charAt(0).toUpperCase()}</span>}
                                 <span className="hidden text-left sm:block"><span className="block text-sm font-bold leading-4">{user?.fullName || "Quản trị viên"}</span><span className="block text-xs text-cyan-300">Quản trị viên</span></span>
                                 <ChevronDown size={15} className="hidden sm:block" />
                             </button>

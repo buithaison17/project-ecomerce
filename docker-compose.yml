@@ -13,15 +13,7 @@ services:
         networks:
             - ecommerce-network
         healthcheck:
-            test:
-              [
-                  "CMD",
-                  "mysqladmin",
-                  "ping",
-                  "-h",
-                  "localhost",
-                  "-p${DATA_SOURCE_PASSSWORD}",
-              ]
+            test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DATA_SOURCE_PASSSWORD}" ]
             interval: 10s
             timeout: 5s
             retries: 10

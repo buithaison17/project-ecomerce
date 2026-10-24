@@ -29,5 +29,6 @@ public interface UserMapper {
     @Mapping(source = "user.role.name", target = "role")
     @Mapping(source = "userInformation.fullName", target = "fullName")
     @Mapping(source = "userInformation.avatarUrl", target = "avatarUrl")
+    @Mapping(source = "userInformation.dateOfBirth", target = "dateOfBirth")
     AuthenticatedUserResponse toAuthenticatedUserResponse(User user, UserInformation userInformation);
 }

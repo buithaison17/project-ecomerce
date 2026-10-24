@@ -12,26 +12,26 @@ export interface CartResponse {
 
 export const cartService = {
     async getCart() {
-        return (await api.get<{ data: CartResponse }>("/api/v1/cart")).data.data;
+        return (await api.get<{ data: CartResponse }>("/cart")).data.data;
     },
 
     async addItem(productId: number, quantity: number) {
-        return (await api.post<{ data: CartResponse }>("/api/v1/cart/items", { productId, quantity })).data.data;
+        return (await api.post<{ data: CartResponse }>("/cart/items", { productId, quantity })).data.data;
     },
 
     async updateItem(productId: number, quantity: number) {
-        return (await api.put<{ data: CartResponse }>(`/api/v1/cart/items/${productId}`, { quantity })).data.data;
+        return (await api.put<{ data: CartResponse }>(`/cart/items/${productId}`, { quantity })).data.data;
     },
 
     async removeItem(productId: number) {
-        return (await api.delete<{ data: CartResponse }>(`/api/v1/cart/items/${productId}`)).data.data;
+        return (await api.delete<{ data: CartResponse }>(`/cart/items/${productId}`)).data.data;
     },
 
     async clear() {
-        return (await api.delete<{ data: CartResponse }>("/api/v1/cart")).data.data;
+        return (await api.delete<{ data: CartResponse }>("/cart")).data.data;
     },
 
     async sync(items: SyncCartItem[]) {
-        return (await api.post<{ data: CartResponse }>("/api/v1/cart/sync", { items })).data.data;
+        return (await api.post<{ data: CartResponse }>("/cart/sync", { items })).data.data;
     },
 };

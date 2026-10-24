@@ -69,7 +69,7 @@ public class AuthService {
 
     public AuthenticatedUserResponse getAuthenticatedUser(User user) {
         UserInformation information = userInformationRepository.findByUserId(user.getId()).orElse(null);
-        return new AuthenticatedUserResponse(user.getId(), user.getUsername(), information != null ? information.getFullName() : user.getUsername(), information != null ? information.getAvatarUrl() : null, user.getRole().getName());
+        return userMapper.toAuthenticatedUserResponse(user, information);
     }
 
     @Transactional

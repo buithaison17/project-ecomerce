@@ -9,12 +9,17 @@ export const api = axios.create({
 // Thêm access token vào request
 api.interceptors.request.use(
     (config) => {
+        if (config.url?.startsWith("/api/v1")) {
+            config.url = config.url.substring(7);
+        }
+
         const token = useAuthStore.getState().accessToken;
 
         const isAuthApi =
-            config.url?.includes("/auth/login") ||
-            config.url?.includes("/auth/register") ||
-            config.url?.includes("/auth/refresh");
+            config.url?.startsWith("/auth/login") ||
+            config.url?.startsWith("/products") ||
+            config.url?.startsWith("/categories") ||
+            config.url?.startsWith("/auth/refresh");
 
         if (token && !isAuthApi) {
             config.headers.Authorization = `Bearer ${token}`;
@@ -38,9 +43,11 @@ api.interceptors.response.use(
         const url = originalRequest.url ?? "";
 
         const isAuthApi =
-            url.includes("/auth/login") ||
-            url.includes("/auth/register") ||
-            url.includes("/auth/refresh");
+            url.startsWith("/auth/login") ||
+            url.startsWith("/auth/register") ||
+            url.startsWith("/products") ||
+            url.startsWith("/categories") ||
+            url.startsWith("/auth/refresh");
 
         if (isAuthApi) {
             return Promise.reject(error);

@@ -10,4 +10,12 @@ export default defineConfig({
         tailwindcss(),
         babel({ presets: [reactCompilerPreset()] }),
     ],
+    server: {
+        proxy: {
+            "/uploads": {
+                target: "http://localhost:8080",
+                changeOrigin: true,
+            },
+        },
+    },
 });

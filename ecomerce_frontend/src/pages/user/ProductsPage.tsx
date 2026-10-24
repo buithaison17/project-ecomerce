@@ -121,7 +121,9 @@ export default function ProductsPage() {
             next.delete(key);
         }
 
-        next.delete("page");
+        if (key !== "page") {
+            next.delete("page");
+        }
         setSearchParams(next);
     };
 
@@ -179,34 +181,61 @@ export default function ProductsPage() {
                     />
 
                     {result && result.totalPages > 1 && (
-                        <div className="mt-8 flex items-center justify-center gap-4">
-                            <button
-                                type="button"
-                                disabled={page <= 0 || loading}
-                                onClick={() =>
-                                    updateFilter("page", String(page - 1))
-                                }
-                                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold disabled:opacity-40"
-                            >
-                                Trang trước
-                            </button>
-
-                            <span className="text-sm text-slate-600">
-                                Trang {page + 1} / {result.totalPages}
-                            </span>
-
-                            <button
-                                type="button"
-                                disabled={
-                                    page >= result.totalPages - 1 || loading
-                                }
-                                onClick={() =>
-                                    updateFilter("page", String(page + 1))
-                                }
-                                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold disabled:opacity-40"
-                            >
-                                Trang sau
-                            </button>
+                        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-slate-200 pt-6 sm:flex-row">
+                            <p className="text-sm text-slate-500">
+                                Hiển thị trang <span className="font-bold text-slate-800">{page + 1}</span> / <span className="font-bold text-slate-800">{result.totalPages}</span> (Tổng cộng <span className="font-bold text-slate-800">{result.totalElements}</span> sản phẩm)
+                            </p>
+                            <div className="flex items-center gap-1.5">
+                                <button
+                                    type="button"
+                                    disabled={page <= 0 || loading}
+                                    onClick={() =>
+                                        updateFilter("page", String(page - 1))
+                                    }
+                                    className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    Trang trước
+                                </button>
+                                {Array.from({ length: result.totalPages }, (_, i) => i)
+                                    .filter((p) => p === 0 || p === result.totalPages - 1 || Math.abs(p - page) <= 2)
+                                    .reduce<(number | string)[]>((acc, p, idx, arr) => {
+                                        if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) {
+                                            acc.push(`dots-${p}`);
+                                        }
+                                        acc.push(p);
+                                        return acc;
+                                    }, [])
+                                    .map((item) =>
+                                        typeof item === "string" ? (
+                                            <span key={item} className="px-1 text-slate-400">...</span>
+                                        ) : (
+                                            <button
+                                                key={item}
+                                                type="button"
+                                                onClick={() => updateFilter("page", String(item))}
+                                                className={`h-9 min-w-9 rounded-xl px-2 text-sm font-bold transition ${
+                                                    page === item
+                                                        ? "bg-indigo-600 text-white shadow-sm"
+                                                        : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                                                }`}
+                                            >
+                                                {item + 1}
+                                            </button>
+                                        )
+                                    )}
+                                <button
+                                    type="button"
+                                    disabled={
+                                        page >= result.totalPages - 1 || loading
+                                    }
+                                    onClick={() =>
+                                        updateFilter("page", String(page + 1))
+                                    }
+                                    className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    Trang sau
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>

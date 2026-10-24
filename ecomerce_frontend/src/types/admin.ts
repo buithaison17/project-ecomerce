@@ -17,7 +17,7 @@ export interface AdminOrder {
     totalAmount: number;
     shippingAmount: number;
     finalAmount: number;
-    orderStatus: "PENDING" | "SHIPPING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+    orderStatus: "PENDING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
     paymentMethod: string;
     paymentStatus: string;
     note?: string;
@@ -36,4 +36,15 @@ export interface InventoryItem {
     availableQuantity: number;
     lowStock: boolean;
     updatedAt: string;
+}
+
+export interface DashboardSummaryResponse {
+    totalOrders: number;
+    ordersToday: number;
+    ordersByStatus: Record<string, number>;
+    totalRevenue: number;
+    totalProducts: number;
+    lowStockProducts: number;
+    outOfStockProducts: number;
+    lowStockThreshold: number;
 }

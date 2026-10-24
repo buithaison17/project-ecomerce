@@ -3,6 +3,8 @@ import { persist } from "zustand/middleware";
 import type { CartItem } from "../types/cart";
 import type { Product } from "../types/catalog";
 
+import { formatProductImageUrl } from "../lib/image";
+
 interface CartState {
     items: CartItem[];
     addItem: (product: Product) => void;
@@ -24,12 +26,13 @@ export const useCartStore = create<CartState>()(
                             : item),
                     };
                 }
+                const image = formatProductImageUrl(product.thumbnailUrl || product.images?.[0]?.url);
                 return {
                     items: [...state.items, {
                         productId: product.id,
                         name: product.name,
                         price: product.price,
-                        thumbnailUrl: product.thumbnailUrl,
+                        thumbnailUrl: image,
                         stockQuantity: product.stockQuantity,
                         quantity: 1,
                     }],

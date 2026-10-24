@@ -15,6 +15,7 @@ import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import * as z from "zod";
 import { api } from "../../lib/axios";
+import { normalizeDate } from "../../service/userService";
 
 const schema = z.object({
     username: z.string().min(3, "Tên đăng nhập tối thiểu 3 ký tự"),
@@ -44,13 +45,31 @@ export default function RegisterPage() {
 
     const onSubmit = async (data: RegisterForm) => {
         try {
-            await api.post("/auth/register", data);
+            const res = await api.post("/auth/register", data);
+            const userObj = res.data?.data?.user;
+            const userInfoObj = res.data?.data?.userInformation;
+            try {
+                localStorage.setItem(
+                    "currentUserProfile",
+                    JSON.stringify({
+                        id: userObj?.id ?? userInfoObj?.id ?? 0,
+                        username: userObj?.username || data.username,
+                        email: userObj?.email || data.email,
+                        fullName: userInfoObj?.fullName || data.fullName,
+                        avatarUrl: userInfoObj?.avatarUrl || null,
+                        dateOfBirth: normalizeDate(userInfoObj?.dateOfBirth || data.dateOfBirth),
+                        gender: userInfoObj?.gender || data.gender,
+                        role: userObj?.role || "CUSTOMER",
+                    })
+                );
+            } catch {}
             message.success("Đăng ký thành công. Hãy đăng nhập.");
             navigate("/login");
-        } catch {
-            message.error(
-                "Không thể đăng ký. Email hoặc tên đăng nhập có thể đã tồn tại.",
-            );
+        } catch (err: any) {
+            const errMsg =
+                err?.response?.data?.message ||
+                "Không thể đăng ký. Email hoặc tên đăng nhập có thể đã tồn tại.";
+            message.error(errMsg);
         }
     };
 

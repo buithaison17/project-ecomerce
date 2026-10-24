@@ -3,10 +3,14 @@ import { loginService } from "../service/loginService";
 import { cartService } from "../service/cartService";
 import { useCartStore } from "./cartStore";
 
-interface AuthUser {
+export interface AuthUser {
+    id?: number;
     username: string;
+    email?: string;
     fullName: string;
     avatarUrl: string | null;
+    dateOfBirth?: string | number[] | null;
+    gender?: string;
     role: string;
 }
 
@@ -38,6 +42,29 @@ export const useAuthStore = create<State>((set) => ({
                 localStorage.setItem("accessToken", accessToken);
             }
 
+            if (user) {
+                try {
+                    localStorage.setItem("currentUser", JSON.stringify(user));
+                    const prevSaved = localStorage.getItem("currentUserProfile");
+                    const prevObj = prevSaved ? JSON.parse(prevSaved) : {};
+                    localStorage.setItem(
+                        "currentUserProfile",
+                        JSON.stringify({
+                            ...prevObj,
+                            id: user.id ?? prevObj.id,
+                            username: user.username ?? prevObj.username,
+                            fullName: user.fullName ?? prevObj.fullName,
+                            avatarUrl: user.avatarUrl ?? prevObj.avatarUrl,
+                            dateOfBirth: user.dateOfBirth ?? prevObj.dateOfBirth,
+                            role: user.role ?? prevObj.role,
+                            email: user.email ?? prevObj.email,
+                        })
+                    );
+                } catch {
+                    // ignore
+                }
+            }
+
             set({
                 user,
                 accessToken: accessToken || "",
@@ -61,7 +88,7 @@ export const useAuthStore = create<State>((set) => ({
                             price: item.price,
                             thumbnailUrl: item.thumbnailUrl,
                             stockQuantity: item.stockQuantity,
-                        });
+                        } as any);
                         // Cập nhật số lượng chính xác
                         useCartStore.getState().updateQuantity(item.productId, item.quantity);
                     });
@@ -80,7 +107,7 @@ export const useAuthStore = create<State>((set) => ({
                             price: item.price,
                             thumbnailUrl: item.thumbnailUrl,
                             stockQuantity: item.stockQuantity,
-                        });
+                        } as any);
                         useCartStore.getState().updateQuantity(item.productId, item.quantity);
                     });
                 } catch (error) {
@@ -105,7 +132,30 @@ export const useAuthStore = create<State>((set) => ({
 
             // Nếu service trả về AxiosResponse, sử dụng response.data.
             // Nếu service đã trả về user trực tiếp, sử dụng response.
-            const user = response.data ?? response;
+            const user = response?.data?.data ?? response?.data ?? response;
+
+            if (user) {
+                try {
+                    localStorage.setItem("currentUser", JSON.stringify(user));
+                    const prevSaved = localStorage.getItem("currentUserProfile");
+                    const prevObj = prevSaved ? JSON.parse(prevSaved) : {};
+                    localStorage.setItem(
+                        "currentUserProfile",
+                        JSON.stringify({
+                            ...prevObj,
+                            id: user.id ?? prevObj.id,
+                            username: user.username ?? prevObj.username,
+                            fullName: user.fullName ?? prevObj.fullName,
+                            avatarUrl: user.avatarUrl ?? prevObj.avatarUrl,
+                            dateOfBirth: user.dateOfBirth ?? prevObj.dateOfBirth,
+                            role: user.role ?? prevObj.role,
+                            email: user.email ?? prevObj.email,
+                        })
+                    );
+                } catch {
+                    // ignore
+                }
+            }
 
             set({ user });
         } catch {
@@ -119,6 +169,7 @@ export const useAuthStore = create<State>((set) => ({
         } finally {
             localStorage.removeItem("accessToken");
             localStorage.removeItem("currentUser");
+            localStorage.removeItem("currentUserProfile");
 
             set({
                 user: null,
