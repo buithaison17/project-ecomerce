@@ -9,6 +9,7 @@ import LoginPage from "../pages/user/LoginPage";
 import CartPage from "../pages/user/CartPage";
 import CheckoutPage from "../pages/user/CheckoutPage";
 import CheckoutSuccessPage from "../pages/user/CheckoutSuccessPage";
+import UserProfilePage from "../pages/user/UserProfilePage";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
 import AdminOrdersPage from "../pages/admin/AdminOrdersPage";
 import AdminInventoryPage from "../pages/admin/AdminInventoryPage";
@@ -25,11 +26,12 @@ export const router = createBrowserRouter([
             { path: "/products", element: <ProductsPage /> },
             { path: "/products/:id", element: <ProductDetailPage /> },
             { path: "/cart", element: <CartPage /> },
-            { path: "/checkout", element: <CheckoutPage /> },
+            { path: "/checkout", element: <ProtectedRoute role="CUSTOMER"><CheckoutPage /></ProtectedRoute> },
             {
                 path: "/checkout/success",
-                element: <CheckoutSuccessPage />,
+                element: <ProtectedRoute role="CUSTOMER"><CheckoutSuccessPage /></ProtectedRoute>,
             },
+            { path: "/profile", element: <ProtectedRoute role="CUSTOMER"><UserProfilePage /></ProtectedRoute> },
         ],
     },
 

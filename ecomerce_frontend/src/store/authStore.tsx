@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import { loginService } from "../service/loginService";
+import { cartService } from "../service/cartService";
+import { useCartStore } from "./cartStore";
 
 interface AuthUser {
     username: string;
@@ -40,6 +42,51 @@ export const useAuthStore = create<State>((set) => ({
                 user,
                 accessToken: accessToken || "",
             });
+
+            // Đồng bộ giỏ hàng LocalStorage với Backend sau khi đăng nhập
+            const localCartItems = useCartStore.getState().items;
+            if (localCartItems.length > 0) {
+                try {
+                    const syncItems = localCartItems.map((item) => ({
+                        productId: item.productId,
+                        quantity: item.quantity,
+                    }));
+                    const syncedCart = await cartService.sync(syncItems);
+                    // Cập nhật giỏ hàng LocalStorage từ dữ liệu Backend
+                    useCartStore.getState().clearCart();
+                    syncedCart.items.forEach((item) => {
+                        useCartStore.getState().addItem({
+                            id: item.productId,
+                            name: item.name,
+                            price: item.price,
+                            thumbnailUrl: item.thumbnailUrl,
+                            stockQuantity: item.stockQuantity,
+                        });
+                        // Cập nhật số lượng chính xác
+                        useCartStore.getState().updateQuantity(item.productId, item.quantity);
+                    });
+                } catch (error) {
+                    console.error("Lỗi đồng bộ giỏ hàng:", error);
+                }
+            } else {
+                // Nếu LocalStorage trống, lấy giỏ hàng từ Backend
+                try {
+                    const backendCart = await cartService.getCart();
+                    useCartStore.getState().clearCart();
+                    backendCart.items.forEach((item) => {
+                        useCartStore.getState().addItem({
+                            id: item.productId,
+                            name: item.name,
+                            price: item.price,
+                            thumbnailUrl: item.thumbnailUrl,
+                            stockQuantity: item.stockQuantity,
+                        });
+                        useCartStore.getState().updateQuantity(item.productId, item.quantity);
+                    });
+                } catch (error) {
+                    console.error("Lỗi lấy giỏ hàng từ Backend:", error);
+                }
+            }
         } finally {
             set({ loading: false });
         }
