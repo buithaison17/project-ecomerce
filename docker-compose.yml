@@ -4,7 +4,7 @@ services:
         container_name: mysql
         restart: unless-stopped
         environment:
-            MYSQL_ROOT_PASSWORD: ${DATA_SOURCE_PASSSWORD}
+            MYSQL_ROOT_PASSWORD: ${DATA_SOURCE_PASSWORD}
             MYSQL_DATABASE: ecommerce
         ports:
             - "3306:3306"
@@ -13,11 +13,11 @@ services:
         networks:
             - ecommerce-network
         healthcheck:
-            test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DATA_SOURCE_PASSSWORD}" ]
+            test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent" ]
             interval: 10s
             timeout: 5s
             retries: 10
-            start_period: 30s
+            start_period: 60s
 
     backend:
         image: sonbui17/ecomerce_backend
@@ -28,7 +28,7 @@ services:
         environment:
             DATA_SOURCE_URL: ${DATA_SOURCE_URL}
             DATA_SOURCE_USERNAME: ${DATA_SOURCE_USERNAME}
-            DATA_SOURCE_PASSSWORD: ${DATA_SOURCE_PASSSWORD}
+            DATA_SOURCE_PASSWORD: ${DATA_SOURCE_PASSWORD}
             JWT_SECRET: ${JWT_SECRET}
             JWT_EXPIRATION: ${JWT_EXPIRATION}
             JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION}

@@ -4,7 +4,7 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: ${DATA_SOURCE_USERNAME}
-    password: ${DATA_SOURCE_PASSSWORD}
+    password: ${DATA_SOURCE_PASSWORD}
     url: ${DATA_SOURCE_URL}
   jpa:
     show-sql: true
