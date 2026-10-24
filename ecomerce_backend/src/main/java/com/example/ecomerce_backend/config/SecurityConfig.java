@@ -4,6 +4,8 @@ import com.example.ecomerce_backend.security.jwt.CustomerAuthenticationEntryPoin
 import com.example.ecomerce_backend.security.jwt.JwtFilterBefore;
 import com.example.ecomerce_backend.security.principal.UserPrincipalService;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -13,7 +15,6 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -32,6 +33,8 @@ import java.util.List;
 public class SecurityConfig {
     private final UserPrincipalService userPrincipalService;
     private final CustomerAuthenticationEntryPoint customerAuthenticationEntryPoint;
+    @Value("${frontend.url}")
+    private String frontendUrl;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity, JwtFilterBefore jwtFilterBefore) {
@@ -50,8 +53,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/users/**").authenticated()
                         .requestMatchers("/api/v1/orders/**").authenticated()
                         .requestMatchers("/api/v1/cart/**").hasRole("CUSTOMER")
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(customerAuthenticationEntryPoint))
@@ -66,14 +68,12 @@ public class SecurityConfig {
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH"));
         // Frontend được phép truy cập
         configuration.setAllowedOrigins(
-                List.of("http://localhost:3000", "http://localhost:5173")
-        );
+                List.of("http://localhost:3000", frontendUrl));
         // Cho phép gửi cookie hoặc thông tin xác thực
         configuration.setAllowCredentials(true);
         // Các request header được phép
         configuration.setAllowedHeaders(
-                List.of("*")
-        );
+                List.of("*"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         // Áp dụng cho tất cả endpoint
         source.registerCorsConfiguration("/**", configuration);

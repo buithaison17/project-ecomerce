@@ -32,6 +32,7 @@ services:
             JWT_SECRET: ${JWT_SECRET}
             JWT_EXPIRATION: ${JWT_EXPIRATION}
             JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION}
+            FRONTEND_URL: ${FRONTEND_URL}
         depends_on:
             mysql:
                 condition: service_healthy
@@ -48,6 +49,8 @@ services:
             - backend
         networks:
             - ecommerce-network
+        environment:
+            VITE_API_BASE_URL: ${VITE_API_BASE_URL}
 
 volumes:
     mysql_data:

@@ -31,3 +31,5 @@ app:
   upload-dir: ${UPLOAD_DIR:uploads}
   low-stock-threshold: 5
   seed-sample-data: ${SEED_SAMPLE_DATA:true}
+frontend:
+  url: ${FRONTEND_URL}
