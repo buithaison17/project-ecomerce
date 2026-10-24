@@ -20,9 +20,7 @@ services:
             start_period: 30s
 
     backend:
-        build:
-            context: ./ecommerce_backend
-            dockerfile: Dockerfile
+        image: sonbui17/ecomerce_backend
         container_name: backend
         restart: unless-stopped
         ports:
@@ -31,6 +29,9 @@ services:
             DATA_SOURCE_URL: ${DATA_SOURCE_URL}
             DATA_SOURCE_USERNAME: ${DATA_SOURCE_USERNAME}
             DATA_SOURCE_PASSSWORD: ${DATA_SOURCE_PASSSWORD}
+            JWT_SECRET: ${JWT_SECRET}
+            JWT_EXPIRATION: ${JWT_EXPIRATION}
+            JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION}
         depends_on:
             mysql:
                 condition: service_healthy
@@ -38,9 +39,7 @@ services:
             - ecommerce-network
 
     frontend:
-        build:
-            context: ./ecommerce_frontend
-            dockerfile: Dockerfile
+        image: sonbui17/ecomerce_frontend
         container_name: frontend
         restart: unless-stopped
         ports:
