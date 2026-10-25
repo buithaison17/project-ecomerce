@@ -30,12 +30,11 @@ interface SelectedLocalFile {
     sizeFormatted: string;
 }
 
+import { formatProductImageUrl } from "../../lib/image";
+
 const formatImageUrl = (url?: string | null) => {
     if (!url) return null;
-    if (url.startsWith("/uploads/")) {
-        return `http://localhost:8080${url}`;
-    }
-    return url;
+    return formatProductImageUrl(url);
 };
 
 export default function AdminProductsPage() {

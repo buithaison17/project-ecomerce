@@ -15,13 +15,14 @@ import { useCartStore } from "../store/cartStore";
 import { catalogService } from "./catalogService";
 import type { ProductSummary } from "../types/catalog";
 import { saveOrderStatusOverride, syncOrderStatus } from "./orderStatusSync";
+import { formatProductImageUrl } from "../lib/image";
 
 export const ORDER_ITEMS_CACHE_KEY = "order_items_cache";
 
 export function getProductThumbnail(name?: string, categoryName?: string, rawUrl?: string | null): string {
     if (rawUrl && typeof rawUrl === "string" && !rawUrl.includes("placehold.co")) {
         if (rawUrl.startsWith("/uploads/")) {
-            return `http://localhost:8080${rawUrl}`;
+            return formatProductImageUrl(rawUrl);
         }
         if (rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) {
             return rawUrl;
