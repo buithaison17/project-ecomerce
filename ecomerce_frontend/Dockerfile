@@ -10,8 +10,8 @@ RUN npm install
 # Copy source code
 COPY . .
 
-# Pass API URL at build time
-ARG VITE_API_BASE_URL
+# Pass API URL at build time (default to production backend)
+ARG VITE_API_BASE_URL=http://221.121.4.43:8080/api/v1
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
 # Build React app

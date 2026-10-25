@@ -1,10 +1,12 @@
+const defaultBackendUrl = import.meta.env.PROD
+    ? "http://221.121.4.43:8080"
+    : "http://localhost:8080";
+
 export const BACKEND_URL =
     import.meta.env.VITE_BACKEND_URL ||
     (import.meta.env.VITE_API_BASE_URL?.startsWith("http")
         ? import.meta.env.VITE_API_BASE_URL.replace(/\/api\/v1\/?$/, "")
-        : import.meta.env.DEV
-        ? "http://localhost:8080"
-        : "");
+        : defaultBackendUrl);
 
 /**
  * Chuẩn hóa URL ảnh sản phẩm từ Backend

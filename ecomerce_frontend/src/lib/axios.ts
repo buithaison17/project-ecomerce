@@ -1,8 +1,12 @@
 import axios from "axios";
 import { useAuthStore } from "../store/authStore";
 
+const defaultBaseUrl = import.meta.env.PROD
+    ? "http://221.121.4.43:8080/api/v1"
+    : "http://localhost:8080/api/v1";
+
 export const api = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || "/api/v1",
+    baseURL: import.meta.env.VITE_API_BASE_URL || defaultBaseUrl,
     withCredentials: true,
 });
 
