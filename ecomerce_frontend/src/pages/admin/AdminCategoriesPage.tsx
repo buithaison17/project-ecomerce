@@ -12,14 +12,189 @@ export default function AdminCategoriesPage() {
     const [description, setDescription] = useState("");
     const [saving, setSaving] = useState(false);
 
-    const loadCategories = () => catalogService.getCategories().then(setCategories).catch(() => toast.error("Không tải được danh mục"));
-    useEffect(() => { void Promise.resolve().then(loadCategories); }, []);
-    const openForm = (category: Category | "new") => { setEditing(category); setName(category === "new" ? "" : category.name); setDescription(category === "new" ? "" : category.description || ""); };
+    const loadCategories = () =>
+        catalogService
+            .getCategories()
+            .then(setCategories)
+            .catch(() => toast.error("Không tải được danh mục"));
+
+    useEffect(() => {
+        void Promise.resolve().then(loadCategories);
+    }, []);
+
+    const openForm = (category: Category | "new") => {
+        setEditing(category);
+        setName(category === "new" ? "" : category.name);
+        setDescription(category === "new" ? "" : category.description || "");
+    };
+
     const save = async () => {
         if (!name.trim()) return toast.error("Vui lòng nhập tên danh mục");
-        try { setSaving(true); if (editing === "new") await adminService.createCategory({ name, description }); else if (editing) await adminService.updateCategory(editing.id, { name, description }); toast.success(editing === "new" ? "Đã thêm danh mục" : "Đã cập nhật danh mục"); setEditing(null); loadCategories(); } catch { toast.error("Không thể lưu danh mục"); } finally { setSaving(false); }
+        try {
+            setSaving(true);
+            if (editing === "new") {
+                await adminService.createCategory({ name: name.trim(), description: description.trim() });
+            } else if (editing) {
+                await adminService.updateCategory(editing.id, { name: name.trim(), description: description.trim() });
+            }
+            toast.success(editing === "new" ? "Đã thêm danh mục mới thành công" : "Đã cập nhật danh mục");
+            setEditing(null);
+            loadCategories();
+        } catch {
+            toast.error("Không thể lưu danh mục");
+        } finally {
+            setSaving(false);
+        }
     };
-    const remove = async (category: Category) => { if (!window.confirm(`Xóa danh mục “${category.name}”?`)) return; try { await adminService.deleteCategory(category.id); toast.success("Đã xóa danh mục"); loadCategories(); } catch { toast.error("Không thể xóa danh mục đang có sản phẩm"); } };
 
-    return <div className="space-y-6"><section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-sm font-semibold text-cyan-300">Sản phẩm</p><h1 className="mt-1 text-3xl font-extrabold text-white">Quản lý danh mục</h1><p className="mt-2 text-sm text-slate-400">Tạo các nhóm sản phẩm để khách hàng dễ tìm kiếm.</p></div><button onClick={() => openForm("new")} className="inline-flex w-fit items-center gap-2 rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-bold text-[#071a3a]"><FolderPlus size={17} /> Thêm danh mục</button></section><section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{categories.map((category) => <article key={category.id} className="rounded-2xl border border-white/10 bg-[#102852] p-5"><div className="flex items-start justify-between"><span className="grid size-11 place-items-center rounded-xl bg-violet-400/15 text-violet-300"><Layers3 size={21} /></span><div className="flex gap-1"><button aria-label="Sửa danh mục" onClick={() => openForm(category)} className="rounded-lg p-2 text-slate-300 hover:bg-white/10"><Edit3 size={16} /></button><button aria-label="Xóa danh mục" onClick={() => remove(category)} className="rounded-lg p-2 text-rose-300 hover:bg-rose-400/10"><Trash2 size={16} /></button></div></div><h2 className="mt-5 font-bold text-white">{category.name}</h2><p className="mt-2 min-h-10 text-sm leading-5 text-slate-400">{category.description || "Chưa có mô tả cho danh mục này."}</p></article>)}{!categories.length && <p className="col-span-full rounded-2xl border border-dashed border-white/15 py-16 text-center text-slate-400">Chưa có danh mục nào.</p>}</section>{editing && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/70 p-4"><div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#102852] p-6"><div className="flex items-center justify-between"><h2 className="text-xl font-extrabold">{editing === "new" ? "Thêm danh mục" : "Cập nhật danh mục"}</h2><button onClick={() => setEditing(null)}><X /></button></div><label className="mt-5 block text-sm font-semibold">Tên danh mục<input value={name} onChange={(event) => setName(event.target.value)} className="mt-2 w-full rounded-xl border border-white/10 bg-[#0b2148] px-3 py-2.5 outline-none focus:border-cyan-400" /></label><label className="mt-4 block text-sm font-semibold">Mô tả<textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={4} className="mt-2 w-full resize-none rounded-xl border border-white/10 bg-[#0b2148] px-3 py-2.5 outline-none focus:border-cyan-400" /></label><div className="mt-6 flex justify-end gap-3"><button onClick={() => setEditing(null)} className="rounded-xl px-4 py-2.5 font-bold text-slate-300 hover:bg-white/10">Hủy</button><button disabled={saving} onClick={save} className="rounded-xl bg-cyan-400 px-4 py-2.5 font-bold text-[#071a3a] disabled:opacity-50">{saving ? "Đang lưu..." : "Lưu danh mục"}</button></div></div></div>}</div>;
+    const remove = async (category: Category) => {
+        if (!window.confirm(`Bạn có chắc chắn muốn xóa danh mục “${category.name}”?`)) return;
+        try {
+            await adminService.deleteCategory(category.id);
+            toast.success("Đã xóa danh mục thành công");
+            loadCategories();
+        } catch {
+            toast.error("Không thể xóa danh mục đang có sản phẩm liên kết");
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            {/* Header */}
+            <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <span className="text-xs font-bold uppercase tracking-widest text-indigo-600">
+                        Quản lý catalogue
+                    </span>
+                    <h1 className="mt-1 text-2xl font-black text-slate-900 sm:text-3xl">
+                        Danh mục sản phẩm
+                    </h1>
+                    <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+                        Tạo và phân loại các ngành hàng giúp khách hàng dễ dàng tìm kiếm sản phẩm.
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    onClick={() => openForm("new")}
+                    className="inline-flex w-fit items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-700 cursor-pointer"
+                >
+                    <FolderPlus size={16} /> Thêm danh mục mới
+                </button>
+            </section>
+
+            {/* Grid list of categories */}
+            <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                {categories.map((category) => (
+                    <article
+                        key={category.id}
+                        className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs transition hover:border-indigo-200 hover:shadow-md"
+                    >
+                        <div>
+                            <div className="flex items-start justify-between">
+                                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                                    <Layers3 size={20} />
+                                </span>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        type="button"
+                                        aria-label="Sửa danh mục"
+                                        onClick={() => openForm(category)}
+                                        className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-indigo-600 transition"
+                                    >
+                                        <Edit3 size={15} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        aria-label="Xóa danh mục"
+                                        onClick={() => remove(category)}
+                                        className="rounded-lg p-2 text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition"
+                                    >
+                                        <Trash2 size={15} />
+                                    </button>
+                                </div>
+                            </div>
+                            <h2 className="mt-4 text-base font-extrabold text-slate-900">
+                                {category.name}
+                            </h2>
+                            <p className="mt-1.5 text-xs text-slate-500 leading-relaxed line-clamp-3">
+                                {category.description || "Chưa có mô tả cho ngành hàng này."}
+                            </p>
+                        </div>
+
+                        <div className="mt-5 border-t border-slate-100 pt-3 flex items-center justify-between text-[11px] text-slate-400">
+                            <span>Mã danh mục #{category.id}</span>
+                            <span className="font-semibold text-indigo-600">Đang hoạt động</span>
+                        </div>
+                    </article>
+                ))}
+
+                {!categories.length && (
+                    <p className="col-span-full rounded-2xl border border-dashed border-slate-200 bg-white py-16 text-center text-xs text-slate-400">
+                        Chưa có danh mục sản phẩm nào trong hệ thống.
+                    </p>
+                )}
+            </section>
+
+            {/* Modal Form */}
+            {editing && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs animate-in fade-in">
+                    <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                            <h2 className="text-base font-extrabold text-slate-900">
+                                {editing === "new" ? "Thêm danh mục mới" : "Chỉnh sửa danh mục"}
+                            </h2>
+                            <button
+                                type="button"
+                                onClick={() => setEditing(null)}
+                                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <div className="mt-5 space-y-4">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                Tên danh mục *
+                                <input
+                                    value={name}
+                                    onChange={(event) => setName(event.target.value)}
+                                    placeholder="Ví dụ: Thiết bị di động"
+                                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-xs font-medium outline-none transition focus:border-indigo-500 focus:bg-white"
+                                />
+                            </label>
+
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                Mô tả ngành hàng
+                                <textarea
+                                    value={description}
+                                    onChange={(event) => setDescription(event.target.value)}
+                                    rows={4}
+                                    placeholder="Nhập mô tả ngắn gọn về nhóm sản phẩm này..."
+                                    className="mt-1.5 w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-xs font-medium outline-none transition focus:border-indigo-500 focus:bg-white"
+                                />
+                            </label>
+                        </div>
+
+                        <div className="mt-6 flex justify-end gap-2.5 border-t border-slate-100 pt-4">
+                            <button
+                                type="button"
+                                onClick={() => setEditing(null)}
+                                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
+                            >
+                                Hủy bỏ
+                            </button>
+                            <button
+                                type="button"
+                                disabled={saving}
+                                onClick={save}
+                                className="rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-200 hover:bg-indigo-700 transition disabled:opacity-50"
+                            >
+                                {saving ? "Đang lưu..." : "Lưu danh mục"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 }

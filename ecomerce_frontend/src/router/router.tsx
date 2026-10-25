@@ -27,13 +27,34 @@ export const router = createBrowserRouter([
             { path: "/products", element: <ProductsPage /> },
             { path: "/products/:id", element: <ProductDetailPage /> },
             { path: "/cart", element: <CartPage /> },
-            { path: "/checkout", element: <ProtectedRoute role="CUSTOMER"><CheckoutPage /></ProtectedRoute> },
+            {
+                path: "/checkout",
+                element:
+                    <ProtectedRoute role="CUSTOMER">
+                        <CheckoutPage />
+                    </ProtectedRoute>
+            },
             {
                 path: "/checkout/success",
-                element: <ProtectedRoute role="CUSTOMER"><CheckoutSuccessPage /></ProtectedRoute>,
+                element:
+                    <ProtectedRoute role="CUSTOMER">
+                        <CheckoutSuccessPage />
+                    </ProtectedRoute>,
             },
-            { path: "/orders", element: <ProtectedRoute role="CUSTOMER"><OrdersPage /></ProtectedRoute> },
-            { path: "/profile", element: <ProtectedRoute role="CUSTOMER"><UserProfilePage /></ProtectedRoute> },
+            {
+                path: "/orders",
+                element:
+                    <ProtectedRoute role="CUSTOMER">
+                        <OrdersPage />
+                    </ProtectedRoute>
+            },
+            {
+                path: "/profile",
+                element:
+                    <ProtectedRoute role="CUSTOMER">
+                        <UserProfilePage />
+                    </ProtectedRoute>
+            },
         ],
     },
 
@@ -53,7 +74,6 @@ export const router = createBrowserRouter([
         element: (
             <ProtectedRoute role="ADMIN">
                 <AdminLayout />
-                //{" "}
             </ProtectedRoute>
         ),
         children: [

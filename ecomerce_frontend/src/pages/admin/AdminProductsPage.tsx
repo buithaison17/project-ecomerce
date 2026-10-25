@@ -16,7 +16,11 @@ import { adminService } from "../../service/adminService";
 import { catalogService } from "../../service/catalogService";
 import type { Category, ProductImage, ProductSummary } from "../../types/catalog";
 
-const currency = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
+const currency = new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0,
+});
 
 interface SelectedLocalFile {
     id: string;
@@ -93,9 +97,9 @@ export default function AdminProductsPage() {
 
     const filteredProducts = products;
 
-    const change = (key: keyof typeof form, value: string) => setForm((old) => ({ ...old, [key]: value }));
+    const change = (key: keyof typeof form, value: string) =>
+        setForm((old) => ({ ...old, [key]: value }));
 
-    // Clean up created object URLs
     const clearSelectedFiles = () => {
         selectedFiles.forEach((item) => URL.revokeObjectURL(item.preview));
         setSelectedFiles([]);
@@ -183,7 +187,8 @@ export default function AdminProductsPage() {
     const saveProduct = async () => {
         if (!form.name.trim()) return toast.error("Vui lòng nhập tên sản phẩm");
         if (!form.categoryId) return toast.error("Vui lòng chọn danh mục cho sản phẩm");
-        if (!form.price || Number(form.price) <= 0) return toast.error("Vui lòng nhập giá bán hợp lệ (> 0 VNĐ)");
+        if (!form.price || Number(form.price) <= 0)
+            return toast.error("Vui lòng nhập giá bán hợp lệ (> 0 VNĐ)");
         if (!form.description.trim()) return toast.error("Vui lòng nhập mô tả sản phẩm");
 
         try {
@@ -195,7 +200,6 @@ export default function AdminProductsPage() {
                 .filter(Boolean);
 
             if (editingProductId) {
-                // Update product details
                 setSavingMessage("Đang cập nhật thông tin...");
                 await adminService.updateProduct(editingProductId, {
                     name: form.name.trim(),
@@ -205,7 +209,6 @@ export default function AdminProductsPage() {
                     imageUrls: manualUrls,
                 });
 
-                // Upload any newly selected files from device
                 if (selectedFiles.length > 0) {
                     setSavingMessage(`Đang tải lên ${selectedFiles.length} ảnh từ thiết bị...`);
                     for (let i = 0; i < selectedFiles.length; i++) {
@@ -221,7 +224,6 @@ export default function AdminProductsPage() {
 
                 toast.success("Đã cập nhật sản phẩm thành công!");
             } else {
-                // Create product
                 setSavingMessage("Đang tạo sản phẩm...");
                 const newProduct = await adminService.createProduct({
                     name: form.name.trim(),
@@ -232,7 +234,6 @@ export default function AdminProductsPage() {
                     imageUrls: manualUrls,
                 });
 
-                // Upload selected images from device for new product
                 if (selectedFiles.length > 0 && newProduct?.id) {
                     setSavingMessage(`Đang tải lên ${selectedFiles.length} ảnh từ thiết bị...`);
                     for (let i = 0; i < selectedFiles.length; i++) {
@@ -253,7 +254,9 @@ export default function AdminProductsPage() {
             load();
         } catch (err: any) {
             console.error("Lỗi lưu sản phẩm:", err);
-            const msg = err.response?.data?.message || (editingProductId ? "Không thể cập nhật sản phẩm" : "Không thể tạo sản phẩm");
+            const msg =
+                err.response?.data?.message ||
+                (editingProductId ? "Không thể cập nhật sản phẩm" : "Không thể tạo sản phẩm");
             toast.error(msg);
         } finally {
             setSaving(false);
@@ -308,47 +311,58 @@ export default function AdminProductsPage() {
             {/* Header */}
             <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <p className="text-sm font-semibold text-cyan-300">Quản trị kho hàng</p>
-                    <h1 className="mt-1 text-3xl font-extrabold text-white">Quản lý sản phẩm</h1>
-                    <p className="mt-2 text-sm text-slate-400">
-                        Thêm sản phẩm mới với ảnh tải trực tiếp từ máy tính/điện thoại, phân loại danh mục và định giá.
+                    <span className="text-xs font-bold uppercase tracking-widest text-indigo-600">
+                        Quản lý kho hàng & danh mục
+                    </span>
+                    <h1 className="mt-1 text-2xl font-black text-slate-900 sm:text-3xl">
+                        Danh sách sản phẩm
+                    </h1>
+                    <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+                        Đăng bán sản phẩm, tải ảnh trực tiếp từ thiết bị, phân loại danh mục và định giá bán.
                     </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
                     <button
+                        type="button"
                         onClick={load}
                         disabled={loading}
-                        className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-sm font-bold text-slate-200 transition hover:bg-white/10 disabled:opacity-50"
+                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-xs transition hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
                     >
-                        <RefreshCw size={16} className={loading ? "animate-spin" : ""} /> Làm mới
+                        <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Làm mới
                     </button>
                     <button
+                        type="button"
                         onClick={openCreator}
-                        className="inline-flex w-fit items-center gap-2 rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-bold text-[#071a3a] transition hover:bg-cyan-300 shadow-lg shadow-cyan-500/20"
+                        className="inline-flex w-fit items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-700 cursor-pointer"
                     >
-                        <PackagePlus size={18} /> Thêm sản phẩm mới
+                        <PackagePlus size={16} /> Thêm sản phẩm mới
                     </button>
                 </div>
             </section>
 
             {/* Filter by Category */}
-            <section className="rounded-2xl border border-white/10 bg-[#102852] p-4 sm:p-5">
-                <div className="flex items-center justify-between">
+            <section className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <div>
-                        <h2 className="font-bold text-white">Danh mục sản phẩm</h2>
-                        <p className="mt-1 text-sm text-slate-400">Hiển thị {filteredProducts.length} sản phẩm phù hợp.</p>
+                        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                            Lọc theo danh mục
+                        </h2>
+                        <p className="mt-0.5 text-xs text-slate-400">
+                            Hiển thị {filteredProducts.length} sản phẩm phù hợp.
+                        </p>
                     </div>
                 </div>
-                <div className="mt-4 flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+                <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
                     <button
+                        type="button"
                         onClick={() => {
                             setSelectedCategoryId("all");
                             setCurrentPage(0);
                         }}
-                        className={`shrink-0 rounded-xl px-3.5 py-2 text-sm font-bold transition ${
+                        className={`shrink-0 rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
                             selectedCategoryId === "all"
-                                ? "bg-cyan-400 text-[#071a3a] shadow-md shadow-cyan-400/20"
-                                : "bg-white/5 text-slate-300 hover:bg-white/10"
+                                ? "bg-indigo-600 text-white shadow-xs"
+                                : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                         }`}
                     >
                         Tất cả danh mục
@@ -356,14 +370,15 @@ export default function AdminProductsPage() {
                     {categories.map((category) => (
                         <button
                             key={category.id}
+                            type="button"
                             onClick={() => {
                                 setSelectedCategoryId(category.id);
                                 setCurrentPage(0);
                             }}
-                            className={`shrink-0 rounded-xl px-3.5 py-2 text-sm font-bold transition ${
+                            className={`shrink-0 rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
                                 selectedCategoryId === category.id
-                                    ? "bg-cyan-400 text-[#071a3a] shadow-md shadow-cyan-400/20"
-                                    : "bg-white/5 text-slate-300 hover:bg-white/10"
+                                    ? "bg-indigo-600 text-white shadow-xs"
+                                    : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                             }`}
                         >
                             {category.name}
@@ -373,46 +388,55 @@ export default function AdminProductsPage() {
             </section>
 
             {/* Products Grid */}
-            <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filteredProducts.map((product) => {
                     const imgUrl = formatImageUrl(product.thumbnailUrl);
 
                     return (
                         <article
                             key={product.id}
-                            className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/10 bg-[#102852] transition hover:border-cyan-400/50 hover:shadow-xl hover:shadow-cyan-950/20"
+                            className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs transition hover:border-indigo-300 hover:shadow-xl hover:shadow-indigo-500/10"
                         >
                             <div className="relative">
                                 {/* Action buttons */}
                                 <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5 opacity-90 transition group-hover:opacity-100">
                                     <button
+                                        type="button"
                                         onClick={() => openEditor(product)}
                                         aria-label={`Sửa ${product.name}`}
-                                        className="grid size-8 place-items-center rounded-lg bg-[#071a3a]/90 text-cyan-300 shadow-md transition hover:bg-cyan-400 hover:text-[#071a3a]"
+                                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/90 text-slate-700 shadow-md backdrop-blur-xs transition hover:bg-indigo-600 hover:text-white"
                                         title="Chỉnh sửa sản phẩm & ảnh"
                                     >
-                                        <Edit3 size={15} />
+                                        <Edit3 size={14} />
                                     </button>
                                     <button
+                                        type="button"
                                         onClick={() => handleDeleteProduct(product)}
                                         aria-label={`Xóa ${product.name}`}
-                                        className="grid size-8 place-items-center rounded-lg bg-[#071a3a]/90 text-rose-400 shadow-md transition hover:bg-rose-500 hover:text-white"
+                                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/90 text-rose-600 shadow-md backdrop-blur-xs transition hover:bg-rose-600 hover:text-white"
                                         title="Xóa sản phẩm"
                                     >
-                                        <Trash2 size={15} />
+                                        <Trash2 size={14} />
                                     </button>
                                 </div>
 
                                 {/* Thumbnail */}
-                                <div className="grid h-44 place-items-center overflow-hidden bg-white/5">
+                                <div className="flex h-48 w-full items-center justify-center overflow-hidden bg-slate-100">
                                     {imgUrl ? (
                                         <img
                                             src={imgUrl}
                                             alt={product.name}
-                                            className="size-full object-cover transition duration-300 group-hover:scale-105"
+                                            className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                                            onError={(e) => {
+                                                const target = e.currentTarget;
+                                                if (!target.src.includes("placehold.co")) {
+                                                    target.src =
+                                                        "https://placehold.co/600x600/f1f5f9/64748b?text=ShopNova";
+                                                }
+                                            }}
                                         />
                                     ) : (
-                                        <div className="flex flex-col items-center gap-2 text-slate-500">
+                                        <div className="flex flex-col items-center gap-2 text-slate-400">
                                             <ImagePlus size={32} />
                                             <span className="text-xs">Chưa có ảnh</span>
                                         </div>
@@ -420,16 +444,27 @@ export default function AdminProductsPage() {
                                 </div>
                             </div>
 
-                            <div className="p-4">
-                                <p className="text-xs font-bold uppercase tracking-wider text-cyan-300">{product.categoryName}</p>
-                                <h2 className="mt-1 line-clamp-1 font-bold text-white title={product.name}">{product.name}</h2>
-                                <div className="mt-3 flex items-center justify-between border-t border-white/8 pt-3">
-                                    <span className="text-base font-extrabold text-white">{currency.format(product.price)}</span>
+                            <div className="p-4 flex flex-1 flex-col justify-between">
+                                <div>
+                                    <p className="text-[11px] font-bold uppercase tracking-wider text-indigo-600">
+                                        {product.categoryName}
+                                    </p>
+                                    <h3
+                                        className="mt-1 line-clamp-2 text-sm font-bold text-slate-800 title={product.name}"
+                                    >
+                                        {product.name}
+                                    </h3>
+                                </div>
+
+                                <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+                                    <span className="text-base font-extrabold text-indigo-600">
+                                        {currency.format(product.price)}
+                                    </span>
                                     <span
-                                        className={`rounded-md px-2 py-0.5 text-xs font-bold ${
+                                        className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
                                             product.stockQuantity <= 5
-                                                ? "bg-rose-500/20 text-rose-300"
-                                                : "bg-emerald-500/20 text-emerald-300"
+                                                ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
                                         }`}
                                     >
                                         Kho: {product.stockQuantity}
@@ -441,23 +476,29 @@ export default function AdminProductsPage() {
                 })}
             </section>
 
-            {/* Phân trang sản phẩm */}
+            {/* Pagination */}
             {totalPages > 1 && (
-                <div className="flex flex-col items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#102852] p-4 text-sm text-slate-400 sm:flex-row">
+                <div className="flex flex-col items-center justify-between gap-4 rounded-2xl border border-slate-200/90 bg-white p-4 text-xs text-slate-500 shadow-xs sm:flex-row">
                     <span>
-                        Hiển thị {products.length} / tổng {totalElements} sản phẩm
+                        Hiển thị <strong>{products.length}</strong> / tổng <strong>{totalElements}</strong> sản phẩm
                     </span>
                     <div className="flex items-center gap-1.5">
                         <button
+                            type="button"
                             disabled={currentPage <= 0 || loading}
                             onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-                            className="rounded-lg border border-white/10 p-1.5 transition hover:bg-white/10 disabled:opacity-30"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
                             title="Trang trước"
                         >
-                            <ChevronLeft size={17} />
+                            <ChevronLeft size={16} />
                         </button>
                         {Array.from({ length: totalPages }, (_, i) => i)
-                            .filter((p) => p === 0 || p === totalPages - 1 || Math.abs(p - currentPage) <= 1)
+                            .filter(
+                                (p) =>
+                                    p === 0 ||
+                                    p === totalPages - 1 ||
+                                    Math.abs(p - currentPage) <= 1,
+                            )
                             .reduce<(number | string)[]>((acc, p, idx, arr) => {
                                 if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) {
                                     acc.push(`dots-${p}`);
@@ -467,7 +508,9 @@ export default function AdminProductsPage() {
                             }, [])
                             .map((item) =>
                                 typeof item === "string" ? (
-                                    <span key={item} className="px-1 text-slate-500">...</span>
+                                    <span key={item} className="px-1 text-slate-400">
+                                        ...
+                                    </span>
                                 ) : (
                                     <button
                                         key={item}
@@ -475,65 +518,70 @@ export default function AdminProductsPage() {
                                         onClick={() => setCurrentPage(item)}
                                         className={`h-8 min-w-8 rounded-lg px-2 text-xs font-bold transition ${
                                             currentPage === item
-                                                ? "bg-cyan-400 text-[#071a3a] shadow-md shadow-cyan-400/20"
-                                                : "border border-white/10 text-slate-300 hover:bg-white/10"
+                                                ? "bg-indigo-600 text-white shadow-xs"
+                                                : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                                         }`}
                                     >
                                         {item + 1}
                                     </button>
-                                )
+                                ),
                             )}
                         <button
+                            type="button"
                             disabled={currentPage >= totalPages - 1 || loading}
                             onClick={() => setCurrentPage((p) => p + 1)}
-                            className="rounded-lg border border-white/10 p-1.5 transition hover:bg-white/10 disabled:opacity-30"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
                             title="Trang sau"
                         >
-                            <ChevronRight size={17} />
+                            <ChevronRight size={16} />
                         </button>
                     </div>
                 </div>
             )}
 
             {!loading && !filteredProducts.length && (
-                <div className="rounded-2xl border border-dashed border-white/15 py-16 text-center text-slate-400">
-                    <p className="text-base font-semibold">Chưa có sản phẩm nào trong danh mục này.</p>
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-white py-16 text-center text-slate-400">
+                    <p className="text-sm font-semibold">
+                        Chưa có sản phẩm nào trong danh mục này.
+                    </p>
                     <button
+                        type="button"
                         onClick={openCreator}
-                        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-4 py-2 text-sm font-bold text-[#071a3a] hover:bg-cyan-300"
+                        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-700"
                     >
-                        <Plus size={16} /> Thêm sản phẩm đầu tiên
+                        <Plus size={15} /> Thêm sản phẩm đầu tiên
                     </button>
                 </div>
             )}
 
-            {/* Modal Tạo / Sửa sản phẩm */}
+            {/* Modal Create / Edit Product */}
             {open && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/80 p-4 backdrop-blur-sm">
-                    <div className="my-8 w-full max-w-2xl rounded-2xl border border-white/15 bg-[#102852] p-6 shadow-2xl">
+                <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/60 p-4 backdrop-blur-xs animate-in fade-in">
+                    <div className="my-8 w-full max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150">
                         {/* Modal Header */}
-                        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                             <div>
-                                <h2 className="text-xl font-extrabold text-white">
+                                <h2 className="text-lg font-black text-slate-900">
                                     {editingProductId ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới"}
                                 </h2>
-                                <p className="mt-1 text-sm text-slate-400">
+                                <p className="mt-0.5 text-xs text-slate-500">
                                     {editingProductId
                                         ? "Cập nhật thông tin chi tiết và tải thêm ảnh chụp từ thiết bị."
                                         : "Điền thông tin và tải ảnh chụp sản phẩm từ thiết bị lên hệ thống."}
                                 </p>
                             </div>
                             <button
+                                type="button"
                                 onClick={closeModal}
                                 aria-label="Đóng"
-                                className="rounded-lg p-2 text-slate-400 transition hover:bg-white/10 hover:text-white"
+                                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                             >
-                                <X size={20} />
+                                <X size={18} />
                             </button>
                         </div>
 
                         {/* Modal Body */}
-                        <div className="mt-5 space-y-4 max-h-[72vh] overflow-y-auto pr-1">
+                        <div className="mt-5 space-y-4 max-h-[70vh] overflow-y-auto pr-1">
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <Field label="Tên sản phẩm *">
                                     <input
@@ -544,7 +592,10 @@ export default function AdminProductsPage() {
                                 </Field>
 
                                 <Field label="Danh mục *">
-                                    <select value={form.categoryId} onChange={(e) => change("categoryId", e.target.value)}>
+                                    <select
+                                        value={form.categoryId}
+                                        onChange={(e) => change("categoryId", e.target.value)}
+                                    >
                                         <option value="">-- Chọn danh mục --</option>
                                         {categories.map((c) => (
                                             <option key={c.id} value={c.id}>
@@ -571,7 +622,9 @@ export default function AdminProductsPage() {
                                             type="number"
                                             min="0"
                                             value={form.initialQuantity}
-                                            onChange={(e) => change("initialQuantity", e.target.value)}
+                                            onChange={(e) =>
+                                                change("initialQuantity", e.target.value)
+                                            }
                                             placeholder="10"
                                         />
                                     </Field>
@@ -587,23 +640,23 @@ export default function AdminProductsPage() {
                                 />
                             </Field>
 
-                            {/* Khu vực Upload ảnh từ thiết bị */}
-                            <div className="rounded-xl border border-white/10 bg-[#0b2148] p-4">
+                            {/* Device image upload zone */}
+                            <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-4">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                                            <UploadCloud size={18} className="text-cyan-400" /> Tải ảnh từ thiết bị (Khuyên dùng)
+                                        <h3 className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                                            <UploadCloud size={17} className="text-indigo-600" /> Tải ảnh từ thiết bị (Khuyên dùng)
                                         </h3>
-                                        <p className="mt-0.5 text-xs text-slate-400">
+                                        <p className="mt-0.5 text-[11px] text-slate-500">
                                             Hỗ trợ định dạng JPG, PNG, WEBP, GIF (tối đa 5MB/ảnh, tối đa 10 ảnh).
                                         </p>
                                     </div>
-                                    <span className="rounded-md bg-cyan-400/10 px-2 py-0.5 text-xs font-bold text-cyan-300">
+                                    <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700">
                                         {existingImages.length + selectedFiles.length} / 10 ảnh
                                     </span>
                                 </div>
 
-                                {/* Dropzone / Picker */}
+                                {/* Dropzone */}
                                 <div
                                     onDragOver={(e) => e.preventDefault()}
                                     onDrop={(e) => {
@@ -611,7 +664,7 @@ export default function AdminProductsPage() {
                                         handleFilesChosen(e.dataTransfer.files);
                                     }}
                                     onClick={() => fileInputRef.current?.click()}
-                                    className="mt-3 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-cyan-400/40 bg-cyan-400/5 px-6 py-5 text-center transition hover:border-cyan-300 hover:bg-cyan-400/10"
+                                    className="mt-3 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-indigo-300 bg-white px-6 py-6 text-center transition hover:border-indigo-500 hover:bg-indigo-50/50"
                                 >
                                     <input
                                         id={fileInputId}
@@ -622,22 +675,26 @@ export default function AdminProductsPage() {
                                         className="hidden"
                                         onChange={(e) => handleFilesChosen(e.target.files)}
                                     />
-                                    <UploadCloud size={30} className="text-cyan-400" />
-                                    <p className="mt-2 text-sm font-bold text-white">
-                                        Nhấp để chọn ảnh từ máy tính / thiết bị hoặc kéo thả vào đây
+                                    <UploadCloud size={28} className="text-indigo-600" />
+                                    <p className="mt-2 text-xs font-bold text-slate-900">
+                                        Nhấp để chọn ảnh từ máy tính hoặc kéo thả vào đây
                                     </p>
-                                    <p className="mt-1 text-xs text-slate-400">Bạn có thể chọn cùng lúc nhiều ảnh</p>
+                                    <p className="mt-1 text-[11px] text-slate-400">
+                                        Bạn có thể chọn cùng lúc nhiều ảnh
+                                    </p>
                                 </div>
 
-                                {/* Preview các ảnh đã chọn từ thiết bị */}
+                                {/* Previews of newly selected files */}
                                 {selectedFiles.length > 0 && (
-                                    <div className="mt-3">
-                                        <p className="text-xs font-bold text-cyan-300 mb-2">Ảnh mới chọn từ máy:</p>
-                                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                    <div className="mt-4">
+                                        <p className="text-xs font-bold text-indigo-700 mb-2">
+                                            Ảnh mới chọn từ máy ({selectedFiles.length}):
+                                        </p>
+                                        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
                                             {selectedFiles.map((item) => (
                                                 <div
                                                     key={item.id}
-                                                    className="group relative overflow-hidden rounded-xl border border-cyan-400/30 bg-[#102852]"
+                                                    className="group relative overflow-hidden rounded-xl border border-indigo-200 bg-white shadow-xs"
                                                 >
                                                     <img
                                                         src={item.preview}
@@ -650,14 +707,14 @@ export default function AdminProductsPage() {
                                                             e.stopPropagation();
                                                             removeSelectedFile(item.id);
                                                         }}
-                                                        className="absolute right-1 top-1 grid size-6 place-items-center rounded-full bg-rose-600 text-white shadow-md hover:bg-rose-700"
+                                                        className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-rose-600 text-white shadow-md hover:bg-rose-700 transition"
                                                         title="Bỏ chọn ảnh này"
                                                     >
-                                                        <X size={14} />
+                                                        <X size={13} />
                                                     </button>
-                                                    <div className="p-1.5 text-[11px] text-slate-300 truncate">
-                                                        <p className="truncate font-medium">{item.name}</p>
-                                                        <p className="text-slate-400 text-[10px]">{item.sizeFormatted}</p>
+                                                    <div className="p-1.5 text-[10px] text-slate-600 truncate bg-slate-50">
+                                                        <p className="truncate font-semibold">{item.name}</p>
+                                                        <p className="text-slate-400">{item.sizeFormatted}</p>
                                                     </div>
                                                 </div>
                                             ))}
@@ -665,11 +722,13 @@ export default function AdminProductsPage() {
                                     </div>
                                 )}
 
-                                {/* Danh sách ảnh hiện tại (trong chế độ sửa sản phẩm) */}
+                                {/* Existing images in edit mode */}
                                 {editingProductId && existingImages.length > 0 && (
-                                    <div className="mt-4 border-t border-white/10 pt-3">
-                                        <p className="text-xs font-bold text-slate-300 mb-2">Ảnh hiện có trên sản phẩm:</p>
-                                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                    <div className="mt-4 border-t border-slate-200/80 pt-3">
+                                        <p className="text-xs font-bold text-slate-700 mb-2">
+                                            Ảnh hiện có trên sản phẩm:
+                                        </p>
+                                        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
                                             {existingImages.map((img) => {
                                                 const url = formatImageUrl(img.url);
                                                 const isDeleting = deletingImageId === img.id;
@@ -677,7 +736,7 @@ export default function AdminProductsPage() {
                                                 return (
                                                     <div
                                                         key={img.id}
-                                                        className="group relative overflow-hidden rounded-xl border border-white/10 bg-[#102852]"
+                                                        className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs"
                                                     >
                                                         <img
                                                             src={url || ""}
@@ -691,12 +750,12 @@ export default function AdminProductsPage() {
                                                                 e.stopPropagation();
                                                                 handleDeleteExistingImage(img.id);
                                                             }}
-                                                            className="absolute right-1 top-1 grid size-6 place-items-center rounded-full bg-rose-600 text-white shadow-md transition hover:bg-rose-700 disabled:opacity-50"
+                                                            className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-rose-600 text-white shadow-md transition hover:bg-rose-700 disabled:opacity-50"
                                                             title="Xóa ảnh này khỏi sản phẩm"
                                                         >
                                                             <Trash2 size={13} />
                                                         </button>
-                                                        <div className="p-1 text-[10px] text-center text-slate-400">
+                                                        <div className="p-1 text-[10px] text-center text-slate-400 bg-slate-50 font-mono">
                                                             {isDeleting ? "Đang xóa..." : `#${img.id}`}
                                                         </div>
                                                     </div>
@@ -707,9 +766,9 @@ export default function AdminProductsPage() {
                                 )}
                             </div>
 
-                            {/* Tuỳ chọn URL ảnh bổ sung (nếu có) */}
-                            <details className="rounded-xl border border-white/10 bg-[#0b2148] p-3 text-xs">
-                                <summary className="cursor-pointer font-semibold text-slate-300 select-none">
+                            {/* Additional image URLs */}
+                            <details className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 text-xs">
+                                <summary className="cursor-pointer font-bold text-slate-700 select-none">
                                     Hoặc thêm URL ảnh bên ngoài (Tùy chọn)
                                 </summary>
                                 <div className="mt-2">
@@ -726,16 +785,16 @@ export default function AdminProductsPage() {
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-4">
-                            <span className="text-xs font-semibold text-cyan-300">
+                        <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
+                            <span className="text-xs font-semibold text-indigo-600">
                                 {saving ? savingMessage || "Đang xử lý..." : ""}
                             </span>
-                            <div className="flex gap-3">
+                            <div className="flex gap-2.5">
                                 <button
                                     type="button"
                                     disabled={saving}
                                     onClick={closeModal}
-                                    className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-300 transition hover:bg-white/10 disabled:opacity-40"
+                                    className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-40"
                                 >
                                     Hủy bỏ
                                 </button>
@@ -743,9 +802,9 @@ export default function AdminProductsPage() {
                                     type="button"
                                     disabled={saving}
                                     onClick={saveProduct}
-                                    className="inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-5 py-2.5 text-sm font-bold text-[#071a3a] transition hover:bg-cyan-300 disabled:opacity-50 shadow-md shadow-cyan-400/20"
+                                    className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-700 disabled:opacity-50"
                                 >
-                                    <Plus size={16} />
+                                    <Plus size={15} />
                                     {saving
                                         ? "Đang lưu..."
                                         : editingProductId
@@ -763,9 +822,9 @@ export default function AdminProductsPage() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
     return (
-        <label className="block text-sm font-semibold text-slate-200">
+        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
             {label}
-            <span className="mt-1.5 block [&_input]:w-full [&_input]:rounded-xl [&_input]:border [&_input]:border-white/10 [&_input]:bg-[#0b2148] [&_input]:px-3.5 [&_input]:py-2.5 [&_input]:text-sm [&_input]:text-white [&_input]:outline-none [&_input]:focus:border-cyan-400 [&_select]:w-full [&_select]:rounded-xl [&_select]:border [&_select]:border-white/10 [&_select]:bg-[#0b2148] [&_select]:px-3.5 [&_select]:py-2.5 [&_select]:text-sm [&_select]:text-white [&_select]:outline-none [&_select]:focus:border-cyan-400 [&_textarea]:w-full [&_textarea]:resize-none [&_textarea]:rounded-xl [&_textarea]:border [&_textarea]:border-white/10 [&_textarea]:bg-[#0b2148] [&_textarea]:px-3.5 [&_textarea]:py-2.5 [&_textarea]:text-sm [&_textarea]:text-white [&_textarea]:outline-none [&_textarea]:focus:border-cyan-400">
+            <span className="mt-1.5 block [&_input]:w-full [&_input]:rounded-xl [&_input]:border [&_input]:border-slate-200 [&_input]:bg-slate-50/50 [&_input]:px-3.5 [&_input]:py-2.5 [&_input]:text-xs [&_input]:font-medium [&_input]:text-slate-900 [&_input]:outline-none [&_input]:focus:border-indigo-500 [&_input]:focus:bg-white [&_select]:w-full [&_select]:rounded-xl [&_select]:border [&_select]:border-slate-200 [&_select]:bg-slate-50/50 [&_select]:px-3.5 [&_select]:py-2.5 [&_select]:text-xs [&_select]:font-medium [&_select]:text-slate-900 [&_select]:outline-none [&_select]:focus:border-indigo-500 [&_select]:focus:bg-white [&_textarea]:w-full [&_textarea]:resize-none [&_textarea]:rounded-xl [&_textarea]:border [&_textarea]:border-slate-200 [&_textarea]:bg-slate-50/50 [&_textarea]:px-3.5 [&_textarea]:py-2.5 [&_textarea]:text-xs [&_textarea]:font-medium [&_textarea]:text-slate-900 [&_textarea]:outline-none [&_textarea]:focus:border-indigo-500 [&_textarea]:focus:bg-white">
                 {children}
             </span>
         </label>

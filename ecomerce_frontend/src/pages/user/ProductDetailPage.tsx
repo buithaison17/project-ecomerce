@@ -1,10 +1,10 @@
 import {
     ArrowLeft,
-    BadgeCheck,
     ChevronLeft,
     ChevronRight,
     Maximize2,
     PackageCheck,
+    RotateCcw,
     ShieldCheck,
     ShoppingCart,
     Truck,
@@ -51,7 +51,7 @@ export default function ProductDetailPage() {
             })
             .catch(() => {
                 if (!cancelled) {
-                    setError("Không thể tải chi tiết sản phẩm.");
+                    setError("Không thể tải chi tiết sản phẩm. Vui lòng thử lại sau.");
                 }
             });
 
@@ -60,12 +60,10 @@ export default function ProductDetailPage() {
         };
     }, [id]);
 
-    // Trích xuất toàn bộ ảnh sản phẩm từ Backend (bao gồm product.images và thumbnailUrl)
     const productImages = useMemo(() => {
         if (!product) return [];
         const list: string[] = [];
 
-        // 1. Thêm tất cả ảnh trong danh sách product.images của BE
         if (product.images && Array.isArray(product.images)) {
             product.images.forEach((img) => {
                 if (img?.url && typeof img.url === "string" && img.url.trim()) {
@@ -77,7 +75,6 @@ export default function ProductDetailPage() {
             });
         }
 
-        // 2. Thêm thumbnailUrl nếu chưa có
         if (
             product.thumbnailUrl &&
             typeof product.thumbnailUrl === "string" &&
@@ -89,7 +86,6 @@ export default function ProductDetailPage() {
             }
         }
 
-        // 3. Fallback nếu chưa có ảnh nào
         if (list.length === 0) {
             list.push("https://placehold.co/900x900/f1f5f9/64748b?text=ShopNova");
         }
@@ -109,7 +105,6 @@ export default function ProductDetailPage() {
         );
     };
 
-    // Phím tắt điều hướng khi mở chế độ xem toàn màn hình (Lightbox)
     useEffect(() => {
         if (!isLightboxOpen) return;
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -124,13 +119,13 @@ export default function ProductDetailPage() {
     if (error) {
         return (
             <div className="mx-auto max-w-7xl px-4 py-16">
-                <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-rose-700">
-                    <p className="font-bold">{error}</p>
+                <div className="rounded-3xl border border-rose-200 bg-rose-50/70 p-8 text-center text-rose-700">
+                    <p className="text-base font-bold">{error}</p>
                     <Link
                         to="/products"
-                        className="mt-3 inline-block font-bold underline"
+                        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-slate-800"
                     >
-                        Quay lại danh sách sản phẩm
+                        <ArrowLeft size={15} /> Quay lại danh mục sản phẩm
                     </Link>
                 </div>
             </div>
@@ -139,8 +134,16 @@ export default function ProductDetailPage() {
 
     if (!product) {
         return (
-            <div className="mx-auto max-w-7xl px-4 py-10">
-                <div className="h-[520px] animate-pulse rounded-3xl bg-slate-200" />
+            <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+                <div className="grid gap-10 lg:grid-cols-2">
+                    <div className="aspect-square rounded-3xl bg-slate-200/70 animate-pulse" />
+                    <div className="space-y-4 pt-4">
+                        <div className="h-6 w-32 rounded-lg bg-slate-200 animate-pulse" />
+                        <div className="h-10 w-3/4 rounded-xl bg-slate-200 animate-pulse" />
+                        <div className="h-8 w-44 rounded-lg bg-slate-200 animate-pulse" />
+                        <div className="h-40 rounded-2xl bg-slate-200 animate-pulse mt-8" />
+                    </div>
+                </div>
             </div>
         );
     }
@@ -149,28 +152,42 @@ export default function ProductDetailPage() {
 
     const handleAddToCart = () => {
         addItem(product);
-        toast.success(`Đã thêm ${product.name} vào giỏ hàng`);
+        toast.success(`Đã thêm "${product.name}" vào giỏ hàng`);
     };
 
     return (
         <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-            <Link
-                to="/products"
-                className="mb-7 inline-flex items-center gap-2 text-sm font-bold text-slate-600 transition hover:text-indigo-600"
-            >
-                <ArrowLeft size={17} />
-                Quay lại danh sách sản phẩm
-            </Link>
+            {/* Breadcrumbs */}
+            <nav className="mb-6 flex items-center gap-2 text-xs font-semibold text-slate-500 overflow-x-auto whitespace-nowrap pb-1">
+                <Link to="/" className="hover:text-indigo-600 transition">
+                    Trang chủ
+                </Link>
+                <ChevronRight size={13} className="text-slate-400 shrink-0" />
+                <Link to="/products" className="hover:text-indigo-600 transition">
+                    Sản phẩm
+                </Link>
+                <ChevronRight size={13} className="text-slate-400 shrink-0" />
+                <Link
+                    to={`/products?categoryId=${product.category.id}`}
+                    className="hover:text-indigo-600 transition"
+                >
+                    {product.category.name}
+                </Link>
+                <ChevronRight size={13} className="text-slate-400 shrink-0" />
+                <span className="text-slate-900 font-bold truncate max-w-xs">
+                    {product.name}
+                </span>
+            </nav>
 
-            <div className="grid gap-10 lg:grid-cols-[1.05fr_.95fr]">
-                {/* Khu vực thư viện ảnh sản phẩm */}
+            <div className="grid gap-10 lg:grid-cols-[1.1fr_1fr]">
+                {/* GALLERY COLUMN */}
                 <div className="space-y-4">
-                    {/* Khung ảnh chính */}
-                    <div className="group relative aspect-square w-full overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 shadow-sm">
+                    {/* Main Image Frame */}
+                    <div className="group relative aspect-square w-full overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-xs">
                         <img
                             src={currentImageUrl}
                             alt={`${product.name} - Ảnh ${activeImageIndex + 1}`}
-                            className="size-full cursor-zoom-in object-cover transition duration-300 group-hover:scale-102"
+                            className="h-full w-full cursor-zoom-in object-cover transition duration-300 will-change-transform group-hover:scale-102"
                             onClick={() => setIsLightboxOpen(true)}
                             onError={(e) => {
                                 const target = e.currentTarget;
@@ -181,22 +198,22 @@ export default function ProductDetailPage() {
                             }}
                         />
 
-                        {/* Huy hiệu số lượng ảnh */}
-                        <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-slate-900/75 px-3 py-1 text-xs font-bold text-white shadow-sm backdrop-blur-md">
+                        {/* Image counter badge */}
+                        <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-slate-950/70 px-3 py-1 text-xs font-bold text-white shadow-sm backdrop-blur-md">
                             Ảnh {activeImageIndex + 1} / {productImages.length}
                         </span>
 
-                        {/* Nút phóng to toàn màn hình */}
+                        {/* Lightbox button */}
                         <button
                             type="button"
                             onClick={() => setIsLightboxOpen(true)}
-                            className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold text-slate-800 shadow-md backdrop-blur-md transition hover:bg-white hover:text-indigo-600"
-                            title="Xem toàn bộ ảnh kích thước lớn"
+                            className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3.5 py-1.5 text-xs font-bold text-slate-800 shadow-md backdrop-blur-md transition hover:bg-white hover:text-indigo-600 focus:outline-none"
+                            title="Xem kích thước lớn"
                         >
                             <Maximize2 size={13} /> Phóng to
                         </button>
 
-                        {/* Nút lùi/tiến ảnh nếu có nhiều hơn 1 ảnh */}
+                        {/* Arrows if multiple */}
                         {productImages.length > 1 && (
                             <>
                                 <button
@@ -206,7 +223,7 @@ export default function ProductDetailPage() {
                                         prevImage();
                                     }}
                                     aria-label="Xem ảnh trước"
-                                    className="absolute left-3 top-1/2 -translate-y-1/2 grid size-10 place-items-center rounded-full bg-white/90 text-slate-800 shadow-lg backdrop-blur-sm transition hover:bg-white hover:scale-105 active:scale-95"
+                                    className="absolute left-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-800 shadow-lg backdrop-blur-sm transition hover:bg-white hover:scale-105 active:scale-95"
                                 >
                                     <ChevronLeft size={20} />
                                 </button>
@@ -217,7 +234,7 @@ export default function ProductDetailPage() {
                                         nextImage();
                                     }}
                                     aria-label="Xem ảnh kế tiếp"
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 grid size-10 place-items-center rounded-full bg-white/90 text-slate-800 shadow-lg backdrop-blur-sm transition hover:bg-white hover:scale-105 active:scale-95"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-800 shadow-lg backdrop-blur-sm transition hover:bg-white hover:scale-105 active:scale-95"
                                 >
                                     <ChevronRight size={20} />
                                 </button>
@@ -225,17 +242,9 @@ export default function ProductDetailPage() {
                         )}
                     </div>
 
-                    {/* Danh sách ảnh thu nhỏ (thumbnails) để xem toàn bộ ảnh từ BE */}
+                    {/* Thumbnails */}
                     {productImages.length > 1 && (
                         <div>
-                            <div className="mb-2 flex items-center justify-between px-1">
-                                <span className="text-xs font-bold text-slate-700">
-                                    Tất cả ảnh của sản phẩm ({productImages.length}):
-                                </span>
-                                <span className="text-[11px] text-slate-400">
-                                    Nhấp vào ảnh để chuyển góc nhìn
-                                </span>
-                            </div>
                             <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-thin">
                                 {productImages.map((imgUrl, idx) => {
                                     const isActive = idx === activeImageIndex;
@@ -244,7 +253,7 @@ export default function ProductDetailPage() {
                                             key={idx}
                                             type="button"
                                             onClick={() => setActiveImageIndex(idx)}
-                                            className={`group relative size-20 shrink-0 overflow-hidden rounded-2xl border-2 transition ${
+                                            className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 transition ${
                                                 isActive
                                                     ? "border-indigo-600 ring-4 ring-indigo-500/20 shadow-md"
                                                     : "border-slate-200 bg-white opacity-70 hover:opacity-100 hover:border-slate-300"
@@ -253,7 +262,7 @@ export default function ProductDetailPage() {
                                             <img
                                                 src={imgUrl}
                                                 alt={`${product.name} thu nhỏ ${idx + 1}`}
-                                                className="size-full object-cover transition duration-200 group-hover:scale-105"
+                                                className="h-full w-full object-cover"
                                                 onError={(e) => {
                                                     const target = e.currentTarget;
                                                     if (!target.src.includes("placehold.co")) {
@@ -262,9 +271,6 @@ export default function ProductDetailPage() {
                                                     }
                                                 }}
                                             />
-                                            {isActive && (
-                                                <div className="absolute inset-0 bg-indigo-600/10" />
-                                            )}
                                         </button>
                                     );
                                 })}
@@ -273,105 +279,131 @@ export default function ProductDetailPage() {
                     )}
                 </div>
 
-                {/* Thông tin chi tiết sản phẩm */}
-                <div className="py-2">
-                    <p className="text-sm font-bold uppercase tracking-[.14em] text-indigo-600">
+                {/* DETAILS COLUMN */}
+                <div className="flex flex-col">
+                    <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
                         {product.category.name}
-                    </p>
+                    </span>
 
-                    <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight sm:text-4xl">
+                    <h1 className="mt-2 text-2xl font-black leading-tight text-slate-900 sm:text-3xl">
                         {product.name}
                     </h1>
 
-                    <div className="mt-6 flex flex-wrap items-center gap-3">
-                        <p className="text-3xl font-black text-indigo-700">
-                            {formatPrice(product.price)}
-                        </p>
+                    {/* Price and Stock status */}
+                    <div className="mt-5 flex flex-wrap items-baseline gap-4 rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                        <div>
+                            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                Giá niêm yết
+                            </p>
+                            <p className="text-3xl font-black text-indigo-600 mt-0.5">
+                                {formatPrice(product.price)}
+                            </p>
+                        </div>
 
                         <span
-                            className={
+                            className={`ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${
                                 product.inStock
-                                    ? "rounded-full bg-emerald-50 px-3 py-1.5 text-sm font-bold text-emerald-700"
-                                    : "rounded-full bg-rose-50 px-3 py-1.5 text-sm font-bold text-rose-700"
-                            }
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : "bg-rose-100 text-rose-800"
+                            }`}
                         >
+                            <span
+                                className={`h-2 w-2 rounded-full ${
+                                    product.inStock ? "bg-emerald-500 animate-pulse" : "bg-rose-500"
+                                }`}
+                            />
                             {product.inStock
-                                ? `Còn ${product.stockQuantity} sản phẩm`
+                                ? `Còn ${product.stockQuantity} sản phẩm trong kho`
                                 : "Tạm hết hàng"}
                         </span>
                     </div>
 
-                    <button
-                        type="button"
-                        disabled={!product.inStock}
-                        onClick={handleAddToCart}
-                        className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3.5 font-bold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-                    >
-                        <ShoppingCart size={19} />
-                        {product.inStock
-                            ? "Thêm vào giỏ hàng"
-                            : "Sản phẩm tạm hết hàng"}
-                    </button>
+                    {/* Actions */}
+                    <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                        <button
+                            type="button"
+                            disabled={!product.inStock}
+                            onClick={handleAddToCart}
+                            className="flex-1 inline-flex items-center justify-center gap-2.5 rounded-xl bg-indigo-600 px-6 py-4 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                        >
+                            <ShoppingCart size={18} />
+                            {product.inStock
+                                ? "Thêm vào giỏ hàng"
+                                : "Sản phẩm tạm hết hàng"}
+                        </button>
+                        <Link
+                            to="/cart"
+                            className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                        >
+                            Xem giỏ hàng
+                        </Link>
+                    </div>
 
-                    <Link
-                        to="/cart"
-                        className="mt-3 block text-center text-sm font-bold text-indigo-600 hover:underline"
-                    >
-                        Xem giỏ hàng
-                    </Link>
-
-                    <div className="mt-7 rounded-2xl border border-slate-200 bg-white p-5">
+                    {/* Stock Status Box */}
+                    <div className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-4">
                         <div className="flex items-center gap-3">
                             <span
-                                className={
+                                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
                                     product.inStock
-                                        ? "grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-600"
-                                        : "grid h-10 w-10 place-items-center rounded-xl bg-rose-50 text-rose-600"
-                                }
+                                        ? "bg-emerald-50 text-emerald-600"
+                                        : "bg-rose-50 text-rose-600"
+                                }`}
                             >
-                                <PackageCheck size={21} />
+                                <PackageCheck size={20} />
                             </span>
-
                             <div>
-                                <p className="font-bold">
+                                <p className="text-xs font-bold text-slate-900">
                                     {product.inStock
-                                        ? "Sẵn sàng giao hàng"
-                                        : "Sản phẩm đang hết hàng"}
+                                        ? "Sẵn sàng giao hàng ngay"
+                                        : "Sản phẩm đang được bổ sung"}
                                 </p>
-                                <p className="mt-0.5 text-sm text-slate-500">
+                                <p className="text-xs text-slate-500 mt-0.5">
                                     {product.inStock
-                                        ? "Tồn kho được đồng bộ theo thời gian thực."
-                                        : "Vui lòng quay lại sau hoặc khám phá sản phẩm tương tự."}
+                                        ? "Được kiểm định chất lượng và đóng gói cẩn thận trước khi xuất kho."
+                                        : "Vui lòng liên hệ hỗ trợ hoặc quay lại sau."}
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="mt-7 border-t border-slate-200 pt-6">
-                        <h2 className="text-lg font-black">
-                            Thông tin sản phẩm
+                    {/* Description */}
+                    <div className="mt-8 border-t border-slate-100 pt-6">
+                        <h2 className="text-base font-bold text-slate-900">
+                            Mô tả chi tiết sản phẩm
                         </h2>
-                        <p className="mt-3 whitespace-pre-line leading-7 text-slate-600">
+                        <div className="mt-3 text-sm leading-relaxed text-slate-600 whitespace-pre-line">
                             {product.description ||
-                                "Thông tin mô tả đang được cập nhật."}
-                        </p>
+                                "Thông tin mô tả đang được hệ thống cập nhật."}
+                        </div>
                     </div>
 
-                    <div className="mt-7 grid gap-3 sm:grid-cols-3">
-                        <Info icon={ShieldCheck} text="Sản phẩm rõ nguồn gốc" />
-                        <Info icon={Truck} text="Giao hàng tận nơi" />
-                        <Info icon={BadgeCheck} text="Hỗ trợ đổi trả" />
+                    {/* Guarantee Perks */}
+                    <div className="mt-8 grid grid-cols-3 gap-3 border-t border-slate-100 pt-6">
+                        <div className="flex flex-col items-center rounded-xl border border-slate-100 bg-slate-50/50 p-3 text-center">
+                            <ShieldCheck size={20} className="text-indigo-600 mb-1" />
+                            <span className="text-xs font-bold text-slate-800">Chính hãng 100%</span>
+                            <span className="text-[10px] text-slate-400 mt-0.5">Cam kết nguồn gốc</span>
+                        </div>
+                        <div className="flex flex-col items-center rounded-xl border border-slate-100 bg-slate-50/50 p-3 text-center">
+                            <RotateCcw size={20} className="text-indigo-600 mb-1" />
+                            <span className="text-xs font-bold text-slate-800">Đổi trả 30 ngày</span>
+                            <span className="text-[10px] text-slate-400 mt-0.5">Nếu có lỗi từ NSX</span>
+                        </div>
+                        <div className="flex flex-col items-center rounded-xl border border-slate-100 bg-slate-50/50 p-3 text-center">
+                            <Truck size={20} className="text-indigo-600 mb-1" />
+                            <span className="text-xs font-bold text-slate-800">Giao siêu tốc</span>
+                            <span className="text-[10px] text-slate-400 mt-0.5">Nội thành 2-4h</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Modal Lightbox xem toàn bộ ảnh ở kích thước lớn */}
+            {/* Lightbox Modal */}
             {isLightboxOpen && (
                 <div
                     className="fixed inset-0 z-50 flex flex-col justify-between bg-slate-950/95 p-4 backdrop-blur-md animate-in fade-in sm:p-6"
                     onClick={() => setIsLightboxOpen(false)}
                 >
-                    {/* Thanh tiêu đề modal */}
                     <div
                         className="flex items-center justify-between text-white"
                         onClick={(e) => e.stopPropagation()}
@@ -387,14 +419,13 @@ export default function ProductDetailPage() {
                         <button
                             type="button"
                             onClick={() => setIsLightboxOpen(false)}
-                            className="grid size-10 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+                            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
                             aria-label="Đóng"
                         >
                             <X size={20} />
                         </button>
                     </div>
 
-                    {/* Vùng hiển thị ảnh phóng to */}
                     <div
                         className="relative flex flex-1 items-center justify-center p-2"
                         onClick={(e) => e.stopPropagation()}
@@ -410,24 +441,23 @@ export default function ProductDetailPage() {
                                 <button
                                     type="button"
                                     onClick={prevImage}
-                                    className="absolute left-2 grid size-12 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/25 active:scale-95 sm:left-6"
+                                    className="absolute left-2 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/25 active:scale-95 sm:left-6"
                                     aria-label="Ảnh trước"
                                 >
-                                    <ChevronLeft size={26} />
+                                    <ChevronLeft size={24} />
                                 </button>
                                 <button
                                     type="button"
                                     onClick={nextImage}
-                                    className="absolute right-2 grid size-12 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/25 active:scale-95 sm:right-6"
+                                    className="absolute right-2 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/25 active:scale-95 sm:right-6"
                                     aria-label="Ảnh sau"
                                 >
-                                    <ChevronRight size={26} />
+                                    <ChevronRight size={24} />
                                 </button>
                             </>
                         )}
                     </div>
 
-                    {/* Dải ảnh nhỏ bên dưới Lightbox */}
                     {productImages.length > 1 && (
                         <div
                             className="flex justify-center overflow-x-auto pb-2 scrollbar-thin"
@@ -439,16 +469,16 @@ export default function ProductDetailPage() {
                                         key={idx}
                                         type="button"
                                         onClick={() => setActiveImageIndex(idx)}
-                                        className={`size-14 shrink-0 overflow-hidden rounded-xl border-2 transition ${
+                                        className={`h-14 w-14 shrink-0 overflow-hidden rounded-xl border-2 transition ${
                                             idx === activeImageIndex
-                                                ? "border-cyan-400 ring-2 ring-cyan-400/50 scale-105"
+                                                ? "border-indigo-400 ring-2 ring-indigo-400/50 scale-105"
                                                 : "border-white/20 opacity-50 hover:opacity-90"
                                         }`}
                                     >
                                         <img
                                             src={imgUrl}
                                             alt=""
-                                            className="size-full object-cover"
+                                            className="h-full w-full object-cover"
                                         />
                                     </button>
                                 ))}
@@ -458,20 +488,5 @@ export default function ProductDetailPage() {
                 </div>
             )}
         </section>
-    );
-}
-
-function Info({
-    icon: Icon,
-    text,
-}: {
-    icon: typeof ShieldCheck;
-    text: string;
-}) {
-    return (
-        <div className="flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-3 text-xs font-bold text-slate-600">
-            <Icon size={17} className="shrink-0 text-indigo-600" />
-            {text}
-        </div>
     );
 }
