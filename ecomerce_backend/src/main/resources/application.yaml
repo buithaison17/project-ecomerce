@@ -10,7 +10,7 @@ spring:
     show-sql: true
     hibernate:
       ddl-auto: update
-    properties: 
+    properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
@@ -33,3 +33,7 @@ app:
   seed-sample-data: ${SEED_SAMPLE_DATA:true}
 frontend:
   url: ${FRONTEND_URL}
+cloudinary:
+  api_key: ${CLOUDINARY_API_KEY}
+  api_secret: ${CLOUDINARY_API_SECRET}
+  cloud_name: ${CLOUDINARY_CLOUD_NAME}

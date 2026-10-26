@@ -61,6 +61,7 @@ api.interceptors.response.use(
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
 
+            await useAuthStore.getState().refresh();
             const token = useAuthStore.getState().accessToken;
 
             if (!token) {
@@ -68,7 +69,6 @@ api.interceptors.response.use(
             }
 
             originalRequest.headers.Authorization = `Bearer ${token}`;
-
             return api(originalRequest);
         }
 

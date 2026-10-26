@@ -1,5 +1,5 @@
 import { ArrowUpRight, PackageOpen, ShoppingBag, XCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { formatProductImageUrl } from "../lib/image";
 import type { ProductSummary } from "../types/catalog";
 
@@ -12,9 +12,13 @@ const formatPrice = (price: number) =>
 
 export default function ProductCard({ product }: { product: ProductSummary }) {
     const imageUrl = formatProductImageUrl(product.thumbnailUrl);
+    const navigate = useNavigate();
 
     return (
-        <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/10">
+        <div
+            onClick={() => navigate(`/products/${product.id}`)}
+            className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/10"
+        >
             {/* Image container */}
             <div className="relative aspect-square w-full overflow-hidden bg-slate-100">
                 <img
@@ -25,7 +29,8 @@ export default function ProductCard({ product }: { product: ProductSummary }) {
                     onError={(e) => {
                         const target = e.currentTarget;
                         if (!target.src.includes("placehold.co")) {
-                            target.src = "https://placehold.co/600x600/f1f5f9/64748b?text=ShopNova";
+                            target.src =
+                                "https://placehold.co/600x600/f1f5f9/64748b?text=ShopNova";
                         }
                     }}
                 />
@@ -60,12 +65,17 @@ export default function ProductCard({ product }: { product: ProductSummary }) {
                         {product.categoryName || "Sản phẩm"}
                     </span>
                     <span className="text-[11px] text-slate-400">
-                        {product.inStock ? `Kho: ${product.stockQuantity}` : "Tạm hết"}
+                        {product.inStock
+                            ? `Kho: ${product.stockQuantity}`
+                            : "Tạm hết"}
                     </span>
                 </div>
 
                 <h3 className="line-clamp-2 min-h-[44px] text-sm font-bold leading-5 text-slate-800 transition group-hover:text-indigo-600 sm:text-base sm:leading-6">
-                    <Link to={`/products/${product.id}`} className="focus:outline-none focus:underline">
+                    <Link
+                        to={`/products/${product.id}`}
+                        className="focus:outline-none focus:underline"
+                    >
                         {product.name}
                     </Link>
                 </h3>
@@ -73,7 +83,9 @@ export default function ProductCard({ product }: { product: ProductSummary }) {
                 {/* Price and Action */}
                 <div className="mt-auto pt-4 border-t border-slate-100 flex items-end justify-between gap-2">
                     <div>
-                        <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Giá bán</p>
+                        <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
+                            Giá bán
+                        </p>
                         <p className="text-base font-extrabold text-slate-900 sm:text-lg text-indigo-600">
                             {formatPrice(product.price)}
                         </p>
@@ -88,7 +100,7 @@ export default function ProductCard({ product }: { product: ProductSummary }) {
                     </Link>
                 </div>
             </div>
-        </article>
+        </div>
     );
 }
 
@@ -102,7 +114,8 @@ export function EmptyProducts() {
                 Không tìm thấy sản phẩm nào
             </h3>
             <p className="mt-1.5 max-w-md text-sm text-slate-500">
-                Hãy thử kiểm tra lại từ khóa tìm kiếm hoặc điều chỉnh lại các tiêu chí bộ lọc giá, danh mục.
+                Hãy thử kiểm tra lại từ khóa tìm kiếm hoặc điều chỉnh lại các
+                tiêu chí bộ lọc giá, danh mục.
             </p>
         </div>
     );

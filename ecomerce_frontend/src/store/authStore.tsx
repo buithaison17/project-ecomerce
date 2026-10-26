@@ -2,6 +2,8 @@ import { create } from "zustand";
 import { loginService } from "../service/loginService";
 import { cartService } from "../service/cartService";
 import { useCartStore } from "./cartStore";
+import { fa } from "zod/locales";
+import { userService } from "../service/userService";
 
 export interface AuthUser {
     id?: number;
@@ -19,6 +21,7 @@ interface State {
     accessToken: string;
     user: AuthUser | null;
     login: (data: { username: string; password: string }) => Promise<void>;
+    refresh: () => Promise<void>;
     loadCurrentUser: () => Promise<void>;
     logout: () => Promise<void>;
 }
@@ -45,7 +48,8 @@ export const useAuthStore = create<State>((set) => ({
             if (user) {
                 try {
                     localStorage.setItem("currentUser", JSON.stringify(user));
-                    const prevSaved = localStorage.getItem("currentUserProfile");
+                    const prevSaved =
+                        localStorage.getItem("currentUserProfile");
                     const prevObj = prevSaved ? JSON.parse(prevSaved) : {};
                     localStorage.setItem(
                         "currentUserProfile",
@@ -55,10 +59,11 @@ export const useAuthStore = create<State>((set) => ({
                             username: user.username ?? prevObj.username,
                             fullName: user.fullName ?? prevObj.fullName,
                             avatarUrl: user.avatarUrl ?? prevObj.avatarUrl,
-                            dateOfBirth: user.dateOfBirth ?? prevObj.dateOfBirth,
+                            dateOfBirth:
+                                user.dateOfBirth ?? prevObj.dateOfBirth,
                             role: user.role ?? prevObj.role,
                             email: user.email ?? prevObj.email,
-                        })
+                        }),
                     );
                 } catch {
                     // ignore
@@ -90,7 +95,9 @@ export const useAuthStore = create<State>((set) => ({
                             stockQuantity: item.stockQuantity,
                         } as any);
                         // Cập nhật số lượng chính xác
-                        useCartStore.getState().updateQuantity(item.productId, item.quantity);
+                        useCartStore
+                            .getState()
+                            .updateQuantity(item.productId, item.quantity);
                     });
                 } catch (error) {
                     console.error("Lỗi đồng bộ giỏ hàng:", error);
@@ -108,7 +115,9 @@ export const useAuthStore = create<State>((set) => ({
                             thumbnailUrl: item.thumbnailUrl,
                             stockQuantity: item.stockQuantity,
                         } as any);
-                        useCartStore.getState().updateQuantity(item.productId, item.quantity);
+                        useCartStore
+                            .getState()
+                            .updateQuantity(item.productId, item.quantity);
                     });
                 } catch (error) {
                     console.error("Lỗi lấy giỏ hàng từ Backend:", error);
@@ -137,7 +146,8 @@ export const useAuthStore = create<State>((set) => ({
             if (user) {
                 try {
                     localStorage.setItem("currentUser", JSON.stringify(user));
-                    const prevSaved = localStorage.getItem("currentUserProfile");
+                    const prevSaved =
+                        localStorage.getItem("currentUserProfile");
                     const prevObj = prevSaved ? JSON.parse(prevSaved) : {};
                     localStorage.setItem(
                         "currentUserProfile",
@@ -147,10 +157,11 @@ export const useAuthStore = create<State>((set) => ({
                             username: user.username ?? prevObj.username,
                             fullName: user.fullName ?? prevObj.fullName,
                             avatarUrl: user.avatarUrl ?? prevObj.avatarUrl,
-                            dateOfBirth: user.dateOfBirth ?? prevObj.dateOfBirth,
+                            dateOfBirth:
+                                user.dateOfBirth ?? prevObj.dateOfBirth,
                             role: user.role ?? prevObj.role,
                             email: user.email ?? prevObj.email,
-                        })
+                        }),
                     );
                 } catch {
                     // ignore
@@ -160,6 +171,18 @@ export const useAuthStore = create<State>((set) => ({
             set({ user });
         } catch {
             set({ user: null });
+        }
+    },
+
+    refresh: async () => {
+        try {
+            set({ loading: true });
+            const response = await userService.refreshToken();
+            set({ accessToken: response.accessToken });
+        } catch (error) {
+            console.log(error);
+        } finally {
+            set({ loading: false });
         }
     },
 
