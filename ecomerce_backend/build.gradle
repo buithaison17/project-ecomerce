@@ -38,6 +38,8 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.13.0")
     implementation("org.mapstruct:mapstruct:1.7.0.Beta2")
     annotationProcessor("org.mapstruct:mapstruct-processor:1.7.0.Beta2")
+    implementation("com.cloudinary:cloudinary-core:2.4.0")
+    implementation("com.cloudinary:cloudinary-http5:2.4.0")
 }
 
 tasks.named('test') {

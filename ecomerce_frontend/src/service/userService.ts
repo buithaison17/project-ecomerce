@@ -111,7 +111,9 @@ export const userService = {
         }
 
         const currentUsername = rawUser?.username || authUser?.username || "";
-        const isSameUser = !cached.username || (currentUsername && cached.username === currentUsername);
+        const isSameUser =
+            !cached.username ||
+            (currentUsername && cached.username === currentUsername);
 
         const rawDate =
             rawUser?.dateOfBirth ??
@@ -128,8 +130,13 @@ export const userService = {
             "";
 
         const profile: UserProfile = {
-            id: rawUser?.id ?? authUser?.id ?? (isSameUser ? cached.id : 0) ?? 0,
-            username: currentUsername || (isSameUser ? cached.username : "") || "",
+            id:
+                rawUser?.id ??
+                authUser?.id ??
+                (isSameUser ? cached.id : 0) ??
+                0,
+            username:
+                currentUsername || (isSameUser ? cached.username : "") || "",
             email,
             fullName:
                 rawUser?.fullName ||
@@ -137,10 +144,22 @@ export const userService = {
                 (isSameUser ? cached.fullName : "") ||
                 currentUsername ||
                 "",
-            avatarUrl: rawUser?.avatarUrl ?? authUser?.avatarUrl ?? (isSameUser ? cached.avatarUrl : null) ?? null,
+            avatarUrl:
+                rawUser?.avatarUrl ??
+                authUser?.avatarUrl ??
+                (isSameUser ? cached.avatarUrl : null) ??
+                null,
             dateOfBirth: formattedDate,
-            gender: rawUser?.gender || authUser?.gender || (isSameUser ? cached.gender : "MALE") || "MALE",
-            role: rawUser?.role || authUser?.role || (isSameUser ? cached.role : "CUSTOMER") || "CUSTOMER",
+            gender:
+                rawUser?.gender ||
+                authUser?.gender ||
+                (isSameUser ? cached.gender : "MALE") ||
+                "MALE",
+            role:
+                rawUser?.role ||
+                authUser?.role ||
+                (isSameUser ? cached.role : "CUSTOMER") ||
+                "CUSTOMER",
         };
 
         localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile));
@@ -171,9 +190,7 @@ export const userService = {
         }
 
         const rawUpdatedDate =
-            userInfoObj?.dateOfBirth ??
-            prevCached.dateOfBirth ??
-            "";
+            userInfoObj?.dateOfBirth ?? prevCached.dateOfBirth ?? "";
         const formattedUpdatedDate = normalizeDate(rawUpdatedDate);
 
         const updatedProfile: UserProfile = {
@@ -193,5 +210,10 @@ export const userService = {
 
     async changePassword(data: ChangePasswordRequest) {
         return (await api.patch("/users/change-password", data)).data;
+    },
+
+    async refreshToken() {
+        const response = await api.post("/auth/refresh");
+        return response.data;
     },
 };

@@ -20,14 +20,17 @@ public class CustomerAuthenticationEntryPoint implements AuthenticationEntryPoin
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
-        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
+
         Map<String, Object> map = Map.of(
-                "status", HttpStatus.BAD_REQUEST.value(),
-                "error", "Bad Request",
+                "status", HttpStatus.UNAUTHORIZED.value(),
+                "error", "Unauthorized",
                 "message", "Bạn không thể truy cập tài nguyên này",
                 "path", request.getRequestURI()
         );
+
         response.getWriter().write(objectMapper.writeValueAsString(map));
     }
 }

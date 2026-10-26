@@ -119,10 +119,13 @@ public class ProductService {
         return toDetail(product);
     }
 
-    /** Ẩn/xóa mềm: sản phẩm biến mất khỏi catalog nhưng đơn hàng cũ vẫn tham chiếu được. */
+    /**
+     * Ẩn/xóa mềm: sản phẩm biến mất khỏi catalog nhưng đơn hàng cũ vẫn tham chiếu được.
+     */
     @Transactional
     public void delete(Long id) {
         Product product = findActive(id);
+        product.getProductImages().forEach(image -> fileStorageService.deleteImage(image.getUrl()));
         product.setIsDeleted(true);
         log.info("Xóa (mềm) sản phẩm id={}", id);
     }
@@ -150,6 +153,7 @@ public class ProductService {
                 .filter(i -> imageId.equals(i.getId()) && !Boolean.TRUE.equals(i.getIsDeleted()))
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy ảnh id=" + imageId));
+        fileStorageService.deleteImage(image.getUrl());
         image.setIsDeleted(true);
         log.info("Xóa ảnh id={} của sản phẩm id={}", imageId, productId);
         return toDetail(product);
@@ -191,7 +195,9 @@ public class ProductService {
         };
     }
 
-    /** Escape ký tự đặc biệt của LIKE để keyword "50%" không bị hiểu thành wildcard. */
+    /**
+     * Escape ký tự đặc biệt của LIKE để keyword "50%" không bị hiểu thành wildcard.
+     */
     private String escapeLike(String value) {
         return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
