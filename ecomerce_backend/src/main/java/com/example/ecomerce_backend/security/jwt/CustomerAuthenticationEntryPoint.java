@@ -16,27 +16,18 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 public class CustomerAuthenticationEntryPoint implements AuthenticationEntryPoint {
-
     private final ObjectMapper objectMapper;
 
     @Override
-    public void commence(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            AuthenticationException authException
-    ) throws IOException, ServletException {
-
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType("application/json");
+    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
+        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         response.setCharacterEncoding("UTF-8");
-
         Map<String, Object> map = Map.of(
-                "status", HttpStatus.UNAUTHORIZED.value(),
-                "error", "Unauthorized",
+                "status", HttpStatus.BAD_REQUEST.value(),
+                "error", "Bad Request",
                 "message", "Bạn không thể truy cập tài nguyên này",
                 "path", request.getRequestURI()
         );
-
         response.getWriter().write(objectMapper.writeValueAsString(map));
     }
 }
