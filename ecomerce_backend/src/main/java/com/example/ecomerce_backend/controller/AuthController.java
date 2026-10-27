@@ -48,6 +48,7 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<ApiDataResponse<Void>> logout(@CookieValue("refreshToken") String refreshToken) {
+        refreshTokenService.revokeToken(refreshToken);
         return new ResponseEntity<>(new ApiDataResponse<>(
                 true,
                 "Đăng xuất thành công",
