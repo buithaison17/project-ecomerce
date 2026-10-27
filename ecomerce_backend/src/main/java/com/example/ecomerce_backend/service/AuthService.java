@@ -57,14 +57,29 @@ public class AuthService {
         String accessToken = jwtService.generateToken(request.username());
         RefreshToken refreshToken = refreshTokenService.generateToken(userPrincipal.getUser());
         // Lưu refresh token vào cookie
+        saveRefreshToken(refreshToken, httpServletResponse);
+        return LoginResponse.builder().accessToken(accessToken).user(getAuthenticatedUser(userPrincipal.getUser())).build();
+    }
+
+    public LoginResponse login(User user, HttpServletResponse httpServletResponse) {
+        // Tạo token
+        String accessToken = jwtService.generateToken(user.getEmail());
+        RefreshToken refreshToken = refreshTokenService.generateToken(user);
+        // Lưu refresh token vào cookie
+        saveRefreshToken(refreshToken, httpServletResponse);
+        return LoginResponse.builder()
+                .accessToken(accessToken)
+                .user(getAuthenticatedUser(user))
+                .build();
+    }
+
+    public void saveRefreshToken(RefreshToken refreshToken, HttpServletResponse httpServletResponse) {
         Cookie cookie = new Cookie("refreshToken", refreshToken.getToken());
         cookie.setHttpOnly(true);
-        cookie.setSecure(true);
         cookie.setPath("/");
         long maxAge = Duration.between(Instant.now(), refreshToken.getExpiresAt()).getSeconds();
         cookie.setMaxAge((int) maxAge);
         httpServletResponse.addCookie(cookie);
-        return LoginResponse.builder().accessToken(accessToken).user(getAuthenticatedUser(userPrincipal.getUser())).build();
     }
 
     public AuthenticatedUserResponse getAuthenticatedUser(User user) {
