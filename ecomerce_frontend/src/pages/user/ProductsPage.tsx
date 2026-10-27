@@ -4,9 +4,9 @@ import {
     Filter,
     Layers,
     RotateCcw,
-    Search,
     SlidersHorizontal,
     Sparkles,
+    Tag,
     X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -15,6 +15,11 @@ import { useSearchParams } from "react-router-dom";
 
 import { EmptyProducts } from "../../components/ProductCard";
 import ProductCard from "../../components/ProductCard";
+import {
+    enrichCategoryWithBrands,
+    getDefaultBrandsForCategory,
+    matchProductBrand,
+} from "../../lib/brandHelper";
 import { catalogService } from "../../service/catalogService";
 import type {
     Category,
@@ -54,6 +59,7 @@ export default function ProductsPage() {
     const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
     const keyword = searchParams.get("keyword") || "";
+    const brand = searchParams.get("brand") || "";
     const categoryId = searchParams.get("categoryId") || "";
     const minPrice = searchParams.get("minPrice") || "";
     const maxPrice = searchParams.get("maxPrice") || "";
@@ -68,10 +74,30 @@ export default function ProductsPage() {
         categories.find((category) => String(category.id) === categoryId) ||
         null;
 
+    const availableBrands = useMemo(() => {
+        if (selectedCategory && selectedCategory.brands && selectedCategory.brands.length > 0) {
+            return selectedCategory.brands;
+        }
+        if (selectedCategory) {
+            return getDefaultBrandsForCategory(selectedCategory.name);
+        }
+        const all = categories.flatMap((c) =>
+            c.brands && c.brands.length > 0
+                ? c.brands
+                : getDefaultBrandsForCategory(c.name),
+        );
+        const unique = Array.from(new Set(all)).filter(Boolean);
+        return unique.length > 0
+            ? unique
+            : ["Apple", "Samsung", "Xiaomi", "OPPO", "Dell", "HP", "Asus", "Sony", "Anker"];
+    }, [selectedCategory, categories]);
+
     useEffect(() => {
         catalogService
             .getCategories()
-            .then(setCategories)
+            .then((cats) => {
+                setCategories(cats.map(enrichCategoryWithBrands));
+            })
             .catch(() => {
                 setError("Không thể tải danh mục.");
             });
@@ -85,6 +111,7 @@ export default function ProductsPage() {
         catalogService
             .getProducts({
                 keyword: keyword || undefined,
+                brand: brand || undefined,
                 categoryId: categoryId ? Number(categoryId) : undefined,
                 minPrice: minPrice ? Number(minPrice) : undefined,
                 maxPrice: maxPrice ? Number(maxPrice) : undefined,
@@ -115,7 +142,7 @@ export default function ProductsPage() {
         return () => {
             cancelled = true;
         };
-    }, [keyword, categoryId, minPrice, maxPrice, sortBy, page]);
+    }, [keyword, brand, categoryId, minPrice, maxPrice, sortBy, page]);
 
     const updateFilter = (key: string, value: string) => {
         const next = new URLSearchParams(searchParams);
@@ -156,8 +183,14 @@ export default function ProductsPage() {
     };
 
     const hasActiveFilters = Boolean(
-        keyword || categoryId || minPrice || maxPrice,
+        keyword || brand || categoryId || minPrice || maxPrice,
     );
+
+    const filteredProducts = useMemo(() => {
+        const list = result?.content || [];
+        if (!brand) return list;
+        return list.filter((p) => matchProductBrand(p.name, brand));
+    }, [result, brand]);
 
     return (
         <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
@@ -182,6 +215,20 @@ export default function ProductsPage() {
                     </button>
 
                     {/* Active filter badges */}
+                    {brand && (
+                        <span className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50/80 px-2.5 py-1 text-xs font-semibold text-indigo-700">
+                            Thương hiệu: {brand}
+                            <button
+                                type="button"
+                                onClick={() => updateFilter("brand", "")}
+                                className="hover:text-indigo-900"
+                                title="Xóa lọc thương hiệu"
+                            >
+                                <X size={12} />
+                            </button>
+                        </span>
+                    )}
+
                     {keyword && (
                         <span className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50/80 px-2.5 py-1 text-xs font-semibold text-indigo-700">
                             Từ khóa: "{keyword}"
@@ -248,12 +295,11 @@ export default function ProductsPage() {
                     } lg:block`}
                 >
                     <FilterPanel
-                        categories={categories}
-                        categoryId={categoryId}
-                        keyword={keyword}
+                        brands={availableBrands}
+                        selectedBrand={brand}
+                        onToggleBrand={(b) => updateFilter("brand", b === brand ? "" : b)}
                         minPrice={minPrice}
                         maxPrice={maxPrice}
-                        onInput={onInput}
                         onPriceRange={updatePriceRange}
                         onClear={clearFilters}
                         selectedCategory={selectedCategory}
@@ -264,7 +310,7 @@ export default function ProductsPage() {
                     <ProductResults
                         loading={loading}
                         error={error}
-                        products={result?.content || []}
+                        products={filteredProducts}
                     />
 
                     {result && result.totalPages > 1 && (
@@ -399,7 +445,7 @@ function CategoryHeader({
                     Tất cả sản phẩm tại ShopNova
                 </h1>
                 <p className="text-xs text-slate-300 leading-relaxed sm:text-sm">
-                    Lọc theo giá thành, từ khóa và danh mục ngành hàng để tìm kiếm nhanh nhất sản phẩm bạn đang cần.
+                    Lọc theo thương hiệu và khoảng giá để tìm kiếm nhanh nhất sản phẩm bạn đang cần.
                 </p>
             </div>
         </div>
@@ -407,26 +453,22 @@ function CategoryHeader({
 }
 
 interface FilterPanelProps {
-    categories: Category[];
-    categoryId: string;
-    keyword: string;
+    brands: string[];
+    selectedBrand: string;
+    onToggleBrand: (brand: string) => void;
     minPrice: string;
     maxPrice: string;
-    onInput: (
-        key: string,
-    ) => (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
     onPriceRange: (min: string, max: string) => void;
     onClear: () => void;
     selectedCategory: Category | null;
 }
 
 function FilterPanel({
-    categories,
-    categoryId,
-    keyword,
+    brands,
+    selectedBrand,
+    onToggleBrand,
     minPrice,
     maxPrice,
-    onInput,
     onPriceRange,
     onClear,
     selectedCategory,
@@ -449,39 +491,12 @@ function FilterPanel({
                 </button>
             </div>
 
-            <div className="space-y-4 border-b border-slate-100 p-5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">
-                    Tìm kiếm từ khóa
-                    <span className="relative mt-2 block">
-                        <Search
-                            size={15}
-                            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                        />
-                        <input
-                            value={keyword}
-                            onChange={onInput("keyword")}
-                            placeholder="Nhập tên sản phẩm..."
-                            className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-9 pr-3 text-xs font-medium outline-none transition focus:border-indigo-500 focus:bg-white"
-                        />
-                    </span>
-                </label>
-
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">
-                    Ngành hàng
-                    <select
-                        value={categoryId}
-                        onChange={onInput("categoryId")}
-                        className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs font-medium outline-none transition focus:border-indigo-500 focus:bg-white cursor-pointer"
-                    >
-                        <option value="">Tất cả ngành hàng</option>
-                        {categories.map((category) => (
-                            <option key={category.id} value={category.id}>
-                                {category.name}
-                            </option>
-                        ))}
-                    </select>
-                </label>
-            </div>
+            {/* Brand Filter Group (Hiện lên trên cùng) */}
+            <BrandFilterGroup
+                brands={brands}
+                selectedBrand={selectedBrand}
+                onToggle={onToggleBrand}
+            />
 
             <FilterGroup
                 title="Mức giá phổ biến"
@@ -514,7 +529,7 @@ function FilterPanel({
                 <div className="grid grid-cols-2 gap-2">
                     <input
                         value={minPrice}
-                        onChange={onInput("minPrice")}
+                        onChange={(e) => onPriceRange(e.target.value, maxPrice)}
                         type="number"
                         min="0"
                         placeholder="Từ (đ)"
@@ -522,7 +537,7 @@ function FilterPanel({
                     />
                     <input
                         value={maxPrice}
-                        onChange={onInput("maxPrice")}
+                        onChange={(e) => onPriceRange(minPrice, e.target.value)}
                         type="number"
                         min="0"
                         placeholder="Đến (đ)"
@@ -537,6 +552,105 @@ function FilterPanel({
         </aside>
     );
 }
+
+function BrandFilterGroup({
+    brands,
+    selectedBrand,
+    onToggle,
+}: {
+    brands: string[];
+    selectedBrand: string;
+    onToggle: (brand: string) => void;
+}) {
+    const [open, setOpen] = useState(true);
+    const [search, setSearch] = useState("");
+
+    const displayedBrands = useMemo(() => {
+        if (!search.trim()) return brands;
+        return brands.filter((b) =>
+            b.toLowerCase().includes(search.toLowerCase().trim()),
+        );
+    }, [brands, search]);
+
+    return (
+        <div className="border-b border-slate-100 px-5 py-4">
+            <button
+                type="button"
+                onClick={() => setOpen((value) => !value)}
+                className="flex w-full items-center justify-between text-left text-xs font-bold uppercase tracking-wider text-slate-700"
+            >
+                <span className="flex items-center gap-1.5">
+                    <Tag size={14} className="text-indigo-600" />
+                    Thương hiệu
+                    {selectedBrand && (
+                        <span className="ml-1 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700">
+                            1
+                        </span>
+                    )}
+                </span>
+                {open ? (
+                    <ChevronUp size={15} className="text-slate-400" />
+                ) : (
+                    <ChevronDown size={15} className="text-slate-400" />
+                )}
+            </button>
+
+            {open && (
+                <div className="mt-3 space-y-2">
+                    {brands.length > 6 && (
+                        <div className="relative mb-2">
+                            <input
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder="Tìm kiếm hãng..."
+                                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs outline-none focus:border-indigo-500 focus:bg-white"
+                            />
+                        </div>
+                    )}
+
+                    <div className="max-h-48 space-y-1.5 overflow-y-auto pr-1">
+                        {displayedBrands.length > 0 ? (
+                            displayedBrands.map((b) => {
+                                const isChecked =
+                                    selectedBrand.toLowerCase() === b.toLowerCase();
+                                return (
+                                    <label
+                                        key={b}
+                                        className={`flex cursor-pointer items-center justify-between rounded-lg px-2 py-1.5 text-xs font-medium transition ${
+                                            isChecked
+                                                ? "bg-indigo-50/80 font-bold text-indigo-700"
+                                                : "text-slate-700 hover:bg-slate-50 hover:text-indigo-600"
+                                        }`}
+                                    >
+                                        <span className="flex items-center gap-2.5">
+                                            <input
+                                                type="checkbox"
+                                                checked={isChecked}
+                                                onChange={() => onToggle(b)}
+                                                className="h-4 w-4 rounded border-slate-300 accent-indigo-600 cursor-pointer"
+                                            />
+                                            <span>{b}</span>
+                                        </span>
+                                        {isChecked && (
+                                            <span className="text-[10px] font-bold text-indigo-600 uppercase">
+                                                Đang chọn
+                                            </span>
+                                        )}
+                                    </label>
+                                );
+                            })
+                        ) : (
+                            <p className="py-2 text-center text-xs text-slate-400">
+                                Không tìm thấy hãng
+                            </p>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 
 function ProductToolbar({
     result,
@@ -617,7 +731,10 @@ function ProductResults({
 
 function CategorySpecificFilters({ category }: { category: Category }) {
     const groups = useMemo(
-        () => getCategoryFilters(category.name),
+        () =>
+            getCategoryFilters(category.name).filter(
+                (g) => g.title !== "Thương hiệu",
+            ),
         [category.name],
     );
 
