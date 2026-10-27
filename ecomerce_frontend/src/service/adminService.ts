@@ -192,11 +192,11 @@ export const adminService = {
         return response.data.data;
     },
 
-    async createCategory(data: { name: string; description: string }) {
+    async createCategory(data: { name: string; description: string; brands?: string[] }) {
         return (await api.post<ApiDataResponse<Category>>("/admin/categories", data)).data.data;
     },
 
-    async updateCategory(id: number, data: { name: string; description: string }) {
+    async updateCategory(id: number, data: { name: string; description: string; brands?: string[] }) {
         return (await api.put<ApiDataResponse<Category>>(`/admin/categories/${id}`, data)).data.data;
     },
 
