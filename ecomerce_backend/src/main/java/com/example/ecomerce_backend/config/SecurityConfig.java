@@ -1,5 +1,6 @@
 package com.example.ecomerce_backend.config;
 
+import com.example.ecomerce_backend.security.jwt.CustomOauthSuccessHandler;
 import com.example.ecomerce_backend.security.jwt.CustomerAuthenticationEntryPoint;
 import com.example.ecomerce_backend.security.jwt.JwtFilterBefore;
 import com.example.ecomerce_backend.security.principal.UserPrincipalService;
@@ -17,7 +18,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -31,8 +31,8 @@ import java.util.List;
 @RequiredArgsConstructor
 @EnableMethodSecurity(securedEnabled = true)
 public class SecurityConfig {
-    private final UserPrincipalService userPrincipalService;
     private final CustomerAuthenticationEntryPoint customerAuthenticationEntryPoint;
+    private final CustomOauthSuccessHandler customOauthSuccessHandler;
     @Value("${frontend.url}")
     private String frontendUrl;
 
@@ -42,7 +42,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/api/v1/auth/**", "/oauth2/**", "/login/**").permitAll()
                         .requestMatchers("/api/v1/users/me").authenticated()
                         .requestMatchers("/api/v1/auth/logout").authenticated()
                         // Catalog công khai: khách chưa đăng nhập vẫn xem được sản phẩm & ảnh
@@ -58,6 +58,7 @@ public class SecurityConfig {
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(customerAuthenticationEntryPoint))
                 .addFilterBefore(jwtFilterBefore, UsernamePasswordAuthenticationFilter.class)
+                .oauth2Login(oauth -> oauth.successHandler(customOauthSuccessHandler))
                 .build();
     }
 
@@ -78,22 +79,5 @@ public class SecurityConfig {
         // Áp dụng cho tất cả endpoint
         source.registerCorsConfiguration("/**", configuration);
         return source;
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userPrincipalService);
-        provider.setPasswordEncoder(passwordEncoder());
-        return provider;
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) {
-        return configuration.getAuthenticationManager();
     }
 }
