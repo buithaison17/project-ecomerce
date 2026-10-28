@@ -15,6 +15,7 @@ import AdminOrdersPage from "../pages/admin/AdminOrdersPage";
 import AdminInventoryPage from "../pages/admin/AdminInventoryPage";
 import AdminCategoriesPage from "../pages/admin/AdminCategoriesPage";
 import AdminProductsPage from "../pages/admin/AdminProductsPage";
+import AdminUsersPage from "../pages/admin/AdminUsersPage";
 import OrdersPage from "../pages/user/OrdersPage";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -82,6 +83,7 @@ export const router = createBrowserRouter([
             { path: "categories", element: <AdminCategoriesPage /> },
             { path: "products", element: <AdminProductsPage /> },
             { path: "inventory", element: <AdminInventoryPage /> },
+            { path: "users", element: <AdminUsersPage /> },
         ],
     },
 

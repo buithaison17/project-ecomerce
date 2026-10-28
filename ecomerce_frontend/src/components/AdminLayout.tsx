@@ -12,6 +12,7 @@ import {
     Search,
     ShoppingBag,
     Store,
+    Users,
     X,
 } from "lucide-react";
 import { useState } from "react";
@@ -25,6 +26,7 @@ const navigation = [
     { to: "/admin/categories", label: "Danh mục sản phẩm", icon: FolderTree },
     { to: "/admin/products", label: "Danh sách sản phẩm", icon: Package },
     { to: "/admin/inventory", label: "Kiểm soát tồn kho", icon: Boxes },
+    { to: "/admin/users", label: "Quản lý người dùng", icon: Users },
 ];
 
 export default function AdminLayout() {
