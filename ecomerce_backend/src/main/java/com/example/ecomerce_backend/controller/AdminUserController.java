@@ -1,9 +1,11 @@
 package com.example.ecomerce_backend.controller;
 
+import com.example.ecomerce_backend.model.dto.request.CreateAdminRequest;
 import com.example.ecomerce_backend.model.dto.response.AdminUserResponse;
 import com.example.ecomerce_backend.model.dto.response.ApiDataResponse;
 import com.example.ecomerce_backend.model.dto.response.PageResponse;
 import com.example.ecomerce_backend.service.AdminUserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +26,14 @@ public class AdminUserController {
         return ResponseEntity.ok(ApiDataResponse.ok(
                 "Lấy danh sách người dùng thành công",
                 adminUserService.getUsers(keyword, role, page, size)
+        ));
+    }
+
+    @PostMapping
+    public ResponseEntity<ApiDataResponse<AdminUserResponse>> createAdmin(@Valid @RequestBody CreateAdminRequest request) {
+        return ResponseEntity.ok(ApiDataResponse.ok(
+                "Tạo tài khoản admin thành công",
+                adminUserService.createAdmin(request)
         ));
     }
 
