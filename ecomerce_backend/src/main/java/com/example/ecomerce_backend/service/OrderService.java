@@ -4,7 +4,6 @@ import com.example.ecomerce_backend.constants.OrderStatus;
 import com.example.ecomerce_backend.constants.PaymentMethod;
 import com.example.ecomerce_backend.constants.PaymentStatus;
 import com.example.ecomerce_backend.exception.BadRequestException;
-import com.example.ecomerce_backend.exception.InsufficientStockException;
 import com.example.ecomerce_backend.exception.ResourceNotFoundException;
 import com.example.ecomerce_backend.model.dto.request.CreateOrderItemRequest;
 import com.example.ecomerce_backend.model.dto.request.CreateOrderRequest;
@@ -27,8 +26,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import vn.payos.PayOS;
+import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
+import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -39,7 +42,7 @@ import java.util.stream.Collectors;
 public class OrderService {
     private final InventoryService inventoryService;
     private final InventoryRepository inventoryRepository;
-    private final BigDecimal SHIPPING_AMOUNT = BigDecimal.valueOf(20000);
+    private final BigDecimal SHIPPING_AMOUNT = BigDecimal.valueOf(1000);
     private final UserDeliveryRepository userDeliveryRepository;
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
@@ -111,13 +114,6 @@ public class OrderService {
         UserDelivery userDelivery = userDeliveryRepository.findByIdAndUser(request.deliveryId(), user)
                 .orElseThrow(() -> new ResourceNotFoundException("Địa chỉ nhận hàng không tồn tại"));
         PaymentMethod paymentMethod = PaymentMethod.valueOf(request.paymentMethod().toUpperCase());
-        PaymentStatus paymentStatus = null;
-
-        if (paymentMethod.equals(PaymentMethod.CASH)) {
-            paymentStatus = PaymentStatus.PENDING;
-        } else if (paymentMethod.equals(PaymentMethod.CREDIT_CARD)) {
-            paymentStatus = PaymentStatus.COMPLETED;
-        }
         // Tạo order
         Order order = Order.builder()
                 .totalAmount(totalAmount)
@@ -127,10 +123,21 @@ public class OrderService {
                 .finalAmount(totalAmount.add(SHIPPING_AMOUNT))
                 .delivery(userDelivery)
                 .paymentMethod(paymentMethod)
-                .paymentStatus(paymentStatus)
+                .paymentStatus(PaymentStatus.PENDING)
                 .note(request.note())
                 .build();
-        order = orderRepository.save(order);
+        Order finalOrder = orderRepository.save(order);
+        // Tạo order items
+        List<OrderItem> orderItems = request.items().stream().map(item -> OrderItem.builder()
+                .order(finalOrder)
+                .totalAmount(
+                        productMap.get(item.productId()).getPrice().multiply(BigDecimal.valueOf(item.quantity()))
+                )
+                .product(productMap.get(item.productId()))
+                .quantity(item.quantity())
+                .unitPrice(productMap.get(item.productId()).getPrice())
+                .build()).toList();
+        orderItemRepository.saveAll(orderItems);
         // Trừ tồn kho
         request.items().forEach(item -> {
             if (productMap.get(item.productId()).getIsDeleted() == true) {
@@ -161,6 +168,9 @@ public class OrderService {
 
     @Transactional
     public OrderResponse cancelOrder(Order order) {
+        if (order.getOrderStatus() == OrderStatus.CANCELLED) {
+            throw new BadRequestException("Đơn hàng đã hoàn kho trước đó");
+        }
         order.setOrderStatus(OrderStatus.CANCELLED);
         List<OrderItem> orderItems = orderItemRepository.findByOrder(order);
         // Hoàn trả số lượng

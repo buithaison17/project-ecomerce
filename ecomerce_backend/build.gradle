@@ -41,6 +41,7 @@ dependencies {
     annotationProcessor("org.mapstruct:mapstruct-processor:1.7.0.Beta2")
     implementation("com.cloudinary:cloudinary-core:2.4.0")
     implementation("com.cloudinary:cloudinary-http5:2.4.0")
+    implementation("vn.payos:payos-java:2.0.1")
 }
 
 tasks.named('test') {

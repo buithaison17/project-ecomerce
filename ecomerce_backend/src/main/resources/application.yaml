@@ -50,3 +50,7 @@ cloudinary:
   api_key: ${CLOUDINARY_API_KEY}
   api_secret: ${CLOUDINARY_API_SECRET}
   cloud_name: ${CLOUDINARY_CLOUD_NAME}
+payos:
+  client_id: ${PAYOS_CLIENT_ID}
+  api_key: ${PAYOS_API_KEY}
+  checksum_key: ${PAYOS_CHECKSUM_KEY}
