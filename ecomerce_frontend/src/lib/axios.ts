@@ -21,6 +21,7 @@ api.interceptors.request.use(
 
         const isAuthApi =
             config.url?.startsWith("/auth/login") ||
+            config.url?.startsWith("/auth/register") ||
             config.url?.startsWith("/products") ||
             config.url?.startsWith("/categories") ||
             config.url?.startsWith("/auth/refresh");

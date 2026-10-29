@@ -1,4 +1,16 @@
-import { Ban, ChevronLeft, ChevronRight, RefreshCw, Search, ShieldCheck, ShieldX, UserCog } from "lucide-react";
+import {
+    AlertTriangle,
+    Ban,
+    ChevronLeft,
+    ChevronRight,
+    Loader2,
+    RefreshCw,
+    Search,
+    ShieldCheck,
+    ShieldX,
+    UserCog,
+    X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { adminService } from "../../service/adminService";
@@ -14,6 +26,10 @@ export default function AdminUsersPage() {
     const [totalPages, setTotalPages] = useState(1);
     const [totalElements, setTotalElements] = useState(0);
     const [actionLoading, setActionLoading] = useState<number | null>(null);
+
+    // Modals for confirmation
+    const [userToBlock, setUserToBlock] = useState<AdminUserResponse | null>(null);
+    const [userToUnblock, setUserToUnblock] = useState<AdminUserResponse | null>(null);
 
     const loadUsers = () => {
         setLoading(true);
@@ -42,12 +58,13 @@ export default function AdminUsersPage() {
         loadUsers();
     };
 
-    const handleBlockUser = async (user: AdminUserResponse) => {
-        if (!window.confirm(`Bạn có chắc chắn muốn khóa tài khoản "${user.username}"?`)) return;
+    const handleConfirmBlock = async () => {
+        if (!userToBlock) return;
         try {
-            setActionLoading(user.id);
-            await adminService.blockUser(user.id);
-            toast.success("Đã khóa tài khoản thành công");
+            setActionLoading(userToBlock.id);
+            await adminService.blockUser(userToBlock.id);
+            toast.success(`Đã khóa tài khoản "${userToBlock.username}" thành công`);
+            setUserToBlock(null);
             loadUsers();
         } catch {
             toast.error("Không thể khóa tài khoản");
@@ -56,12 +73,13 @@ export default function AdminUsersPage() {
         }
     };
 
-    const handleUnblockUser = async (user: AdminUserResponse) => {
-        if (!window.confirm(`Bạn có chắc chắn muốn mở khóa tài khoản "${user.username}"?`)) return;
+    const handleConfirmUnblock = async () => {
+        if (!userToUnblock) return;
         try {
-            setActionLoading(user.id);
-            await adminService.unblockUser(user.id);
-            toast.success("Đã mở khóa tài khoản thành công");
+            setActionLoading(userToUnblock.id);
+            await adminService.unblockUser(userToUnblock.id);
+            toast.success(`Đã mở khóa tài khoản "${userToUnblock.username}" thành công`);
+            setUserToUnblock(null);
             loadUsers();
         } catch {
             toast.error("Không thể mở khóa tài khoản");
@@ -130,7 +148,7 @@ export default function AdminUsersPage() {
                             <button
                                 type="button"
                                 onClick={handleSearch}
-                                className="rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 transition"
+                                className="rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 transition cursor-pointer"
                             >
                                 Tìm kiếm
                             </button>
@@ -148,7 +166,7 @@ export default function AdminUsersPage() {
                                 setRoleFilter(e.target.value);
                                 setCurrentPage(1);
                             }}
-                            className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-xs font-medium outline-none transition focus:border-indigo-500 focus:bg-white"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-xs font-medium outline-none transition focus:border-indigo-500 focus:bg-white cursor-pointer"
                         >
                             <option value="all">Tất cả vai trò</option>
                             <option value="ADMIN">Quản trị viên</option>
@@ -228,18 +246,18 @@ export default function AdminUsersPage() {
                                             {user.isEnabled ? (
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleBlockUser(user)}
+                                                    onClick={() => setUserToBlock(user)}
                                                     disabled={actionLoading === user.id}
-                                                    className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-3 py-1.5 text-[11px] font-bold text-rose-700 border border-rose-200 hover:bg-rose-100 transition disabled:opacity-50"
+                                                    className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-3 py-1.5 text-[11px] font-bold text-rose-700 border border-rose-200 hover:bg-rose-100 transition disabled:opacity-50 cursor-pointer"
                                                 >
                                                     <Ban size={12} /> Khóa
                                                 </button>
                                             ) : (
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleUnblockUser(user)}
+                                                    onClick={() => setUserToUnblock(user)}
                                                     disabled={actionLoading === user.id}
-                                                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition disabled:opacity-50"
+                                                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition disabled:opacity-50 cursor-pointer"
                                                 >
                                                     <ShieldCheck size={12} /> Mở khóa
                                                 </button>
@@ -273,7 +291,7 @@ export default function AdminUsersPage() {
                             type="button"
                             disabled={currentPage <= 1 || loading}
                             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
                             title="Trang trước"
                         >
                             <ChevronLeft size={16} />
@@ -297,7 +315,7 @@ export default function AdminUsersPage() {
                                         key={item}
                                         type="button"
                                         onClick={() => setCurrentPage(item)}
-                                        className={`h-8 min-w-8 rounded-lg px-2 text-xs font-bold transition ${
+                                        className={`h-8 min-w-8 rounded-lg px-2 text-xs font-bold transition cursor-pointer ${
                                             currentPage === item
                                                 ? "bg-indigo-600 text-white shadow-xs"
                                                 : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
@@ -311,11 +329,225 @@ export default function AdminUsersPage() {
                             type="button"
                             disabled={currentPage >= totalPages || loading}
                             onClick={() => setCurrentPage((p) => p + 1)}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
                             title="Trang sau"
                         >
                             <ChevronRight size={16} />
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal xác nhận Khóa tài khoản */}
+            {userToBlock && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+                    <div
+                        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150"
+                        role="dialog"
+                        aria-modal="true"
+                    >
+                        {/* Header */}
+                        <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 border border-rose-100">
+                                    <AlertTriangle size={24} />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-black text-slate-900">
+                                        Xác nhận khóa tài khoản
+                                    </h3>
+                                    <p className="text-xs text-slate-500">
+                                        Hành động tạm dừng quyền truy cập người dùng
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => !actionLoading && setUserToBlock(null)}
+                                disabled={actionLoading !== null}
+                                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition cursor-pointer disabled:opacity-50"
+                                title="Đóng"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {/* User Card */}
+                        <div className="mt-4 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 font-black text-sm">
+                                    {userToBlock.username.charAt(0).toUpperCase()}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-bold text-slate-900 text-sm truncate">
+                                            {userToBlock.username}
+                                        </span>
+                                        <span className="text-[10px] font-semibold text-slate-500 rounded bg-slate-200/70 px-1.5 py-0.5">
+                                            #{userToBlock.id}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-slate-500 truncate mt-0.5">
+                                        {userToBlock.email}
+                                    </p>
+                                </div>
+                                <span
+                                    className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                        userToBlock.role === "ADMIN"
+                                            ? "bg-purple-50 text-purple-700 border border-purple-200"
+                                            : "bg-slate-100 text-slate-700 border border-slate-200"
+                                    }`}
+                                >
+                                    {userToBlock.role === "ADMIN" ? "Quản trị viên" : "Người dùng"}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Warning description */}
+                        <p className="mt-4 text-xs text-slate-600 leading-relaxed">
+                            Bạn có chắc chắn muốn khóa tài khoản{" "}
+                            <strong className="text-slate-900">"{userToBlock.username}"</strong>?
+                            Sau khi bị khóa, người dùng này sẽ{" "}
+                            <span className="font-bold text-rose-600">
+                                không thể đăng nhập
+                            </span>{" "}
+                            hoặc thực hiện các giao dịch trên hệ thống cho tới khi được mở khóa.
+                        </p>
+
+                        {/* Actions */}
+                        <div className="mt-6 flex items-center justify-end gap-2.5">
+                            <button
+                                type="button"
+                                onClick={() => setUserToBlock(null)}
+                                disabled={actionLoading !== null}
+                                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer disabled:opacity-50"
+                            >
+                                Hủy bỏ
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleConfirmBlock}
+                                disabled={actionLoading !== null}
+                                className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-rose-200 hover:bg-rose-700 transition cursor-pointer disabled:opacity-60"
+                            >
+                                {actionLoading === userToBlock.id ? (
+                                    <>
+                                        <Loader2 size={14} className="animate-spin" />
+                                        Đang khóa...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Ban size={14} />
+                                        Xác nhận khóa
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal xác nhận Mở khóa tài khoản */}
+            {userToUnblock && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+                    <div
+                        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150"
+                        role="dialog"
+                        aria-modal="true"
+                    >
+                        {/* Header */}
+                        <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+                                    <ShieldCheck size={24} />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-black text-slate-900">
+                                        Xác nhận mở khóa tài khoản
+                                    </h3>
+                                    <p className="text-xs text-slate-500">
+                                        Khôi phục quyền truy cập cho người dùng
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => !actionLoading && setUserToUnblock(null)}
+                                disabled={actionLoading !== null}
+                                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition cursor-pointer disabled:opacity-50"
+                                title="Đóng"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {/* User Card */}
+                        <div className="mt-4 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 font-black text-sm">
+                                    {userToUnblock.username.charAt(0).toUpperCase()}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-bold text-slate-900 text-sm truncate">
+                                            {userToUnblock.username}
+                                        </span>
+                                        <span className="text-[10px] font-semibold text-slate-500 rounded bg-slate-200/70 px-1.5 py-0.5">
+                                            #{userToUnblock.id}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-slate-500 truncate mt-0.5">
+                                        {userToUnblock.email}
+                                    </p>
+                                </div>
+                                <span
+                                    className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                        userToUnblock.role === "ADMIN"
+                                            ? "bg-purple-50 text-purple-700 border border-purple-200"
+                                            : "bg-slate-100 text-slate-700 border border-slate-200"
+                                    }`}
+                                >
+                                    {userToUnblock.role === "ADMIN" ? "Quản trị viên" : "Người dùng"}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Notice description */}
+                        <p className="mt-4 text-xs text-slate-600 leading-relaxed">
+                            Bạn có chắc chắn muốn mở lại quyền truy cập cho tài khoản{" "}
+                            <strong className="text-slate-900">"{userToUnblock.username}"</strong>?
+                            Người dùng sẽ có thể đăng nhập và tiếp tục mua hàng trên hệ thống.
+                        </p>
+
+                        {/* Actions */}
+                        <div className="mt-6 flex items-center justify-end gap-2.5">
+                            <button
+                                type="button"
+                                onClick={() => setUserToUnblock(null)}
+                                disabled={actionLoading !== null}
+                                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer disabled:opacity-50"
+                            >
+                                Hủy bỏ
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleConfirmUnblock}
+                                disabled={actionLoading !== null}
+                                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-200 hover:bg-emerald-700 transition cursor-pointer disabled:opacity-60"
+                            >
+                                {actionLoading === userToUnblock.id ? (
+                                    <>
+                                        <Loader2 size={14} className="animate-spin" />
+                                        Đang mở khóa...
+                                    </>
+                                ) : (
+                                    <>
+                                        <ShieldCheck size={14} />
+                                        Xác nhận mở khóa
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

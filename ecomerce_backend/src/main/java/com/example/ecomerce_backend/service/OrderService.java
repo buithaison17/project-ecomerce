@@ -5,6 +5,7 @@ import com.example.ecomerce_backend.constants.PaymentMethod;
 import com.example.ecomerce_backend.constants.PaymentStatus;
 import com.example.ecomerce_backend.exception.BadRequestException;
 import com.example.ecomerce_backend.exception.ResourceNotFoundException;
+import com.example.ecomerce_backend.model.dto.request.CancelOrderRequest;
 import com.example.ecomerce_backend.model.dto.request.CreateOrderItemRequest;
 import com.example.ecomerce_backend.model.dto.request.CreateOrderRequest;
 import com.example.ecomerce_backend.model.dto.request.OrderUpdateStatusRequest;
@@ -12,13 +13,11 @@ import com.example.ecomerce_backend.model.dto.response.OrderItemResponse;
 import com.example.ecomerce_backend.model.dto.response.OrderResponse;
 import com.example.ecomerce_backend.model.entity.*;
 import com.example.ecomerce_backend.model.mapper.OrderMapper;
-import com.example.ecomerce_backend.repository.InventoryRepository;
-import com.example.ecomerce_backend.repository.OrderItemRepository;
-import com.example.ecomerce_backend.repository.OrderRepository;
-import com.example.ecomerce_backend.repository.UserDeliveryRepository;
+import com.example.ecomerce_backend.repository.*;
 import com.example.ecomerce_backend.security.principal.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,9 +25,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.payos.PayOS;
-import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
-import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
+import vn.payos.model.v2.paymentRequests.PaymentLinkStatus;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -38,7 +35,6 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class OrderService {
     private final InventoryService inventoryService;
     private final InventoryRepository inventoryRepository;
@@ -47,6 +43,31 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final OrderMapper orderMapper;
+    private final TransactionRepository transactionRepository;
+    private final CheckoutService checkoutService;
+    private final UserInformationRepository userInformationRepository;
+
+    public OrderService(
+            InventoryService inventoryService,
+            InventoryRepository inventoryRepository,
+            UserDeliveryRepository userDeliveryRepository,
+            OrderRepository orderRepository,
+            OrderItemRepository orderItemRepository,
+            OrderMapper orderMapper,
+            TransactionRepository transactionRepository,
+            @Lazy CheckoutService checkoutService,
+            UserInformationRepository userInformationRepository
+    ) {
+        this.inventoryService = inventoryService;
+        this.inventoryRepository = inventoryRepository;
+        this.userDeliveryRepository = userDeliveryRepository;
+        this.orderRepository = orderRepository;
+        this.orderItemRepository = orderItemRepository;
+        this.orderMapper = orderMapper;
+        this.transactionRepository = transactionRepository;
+        this.checkoutService = checkoutService;
+        this.userInformationRepository = userInformationRepository;
+    }
 
     // Lấy toàn bộ danh sách đơn hàng (ADMIN)
     public Page<OrderResponse> findAll(Integer currentPage, Integer pageSize, OrderStatus orderStatus) {
@@ -54,10 +75,18 @@ public class OrderService {
         Pageable pageable = PageRequest.of(currentPage - 1, pageSize, sort);
         if (orderStatus == null) {
             Page<Order> orders = orderRepository.findByIsDeleted(false, pageable);
-            return orders.map(orderMapper::toOrderResponse);
+            return orders.map(order -> {
+                UserInformation userInformation = userInformationRepository.findByUserId(order.getUser().getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Thông tin người dùng không tồn tại"));
+                return orderMapper.toOrderResponse(order, userInformation);
+            });
         }
         Page<Order> orders = orderRepository.findByIsDeletedAndOrderStatus(false, orderStatus, pageable);
-        return orders.map(orderMapper::toOrderResponse);
+        return orders.map(order -> {
+            UserInformation userInformation = userInformationRepository.findByUserId(order.getUser().getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Thông tin người dùng không tồn tại"));
+            return orderMapper.toOrderResponse(order, userInformation);
+        });
     }
 
     // Lấy danh sách đơn hàng của người dùng
@@ -171,6 +200,9 @@ public class OrderService {
         if (order.getOrderStatus() == OrderStatus.CANCELLED) {
             throw new BadRequestException("Đơn hàng đã hoàn kho trước đó");
         }
+        if (order.getOrderStatus() != OrderStatus.PENDING) {
+            throw new BadRequestException("Đơn hàng không thể hủy");
+        }
         order.setOrderStatus(OrderStatus.CANCELLED);
         List<OrderItem> orderItems = orderItemRepository.findByOrder(order);
         // Hoàn trả số lượng
@@ -183,11 +215,43 @@ public class OrderService {
     }
 
     @Transactional
+    public OrderResponse cancelOrder(Long id, CancelOrderRequest request) {
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User user = userPrincipal.getUser();
+        Order order = orderRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Đơn hàng không tồn tại"));
+        if (order.getOrderStatus() == OrderStatus.CANCELLED) {
+            throw new BadRequestException("Đơn hàng đã hoàn kho trước đó");
+        }
+        if (order.getOrderStatus() != OrderStatus.PENDING) {
+            throw new BadRequestException("Đơn hàng không thể hủy");
+        }
+        order.setOrderStatus(OrderStatus.CANCELLED);
+        List<OrderItem> orderItems = orderItemRepository.findByOrder(order);
+        // Hoàn trả số lượng
+        orderItems.forEach(item -> inventoryService.increaseStock(
+                item.getProduct().getId(),
+                item.getQuantity()
+        ));
+        // Xử lý khi thanh toán qua credit card
+        if (order.getPaymentMethod() == PaymentMethod.CREDIT_CARD) {
+            Transaction transaction = transactionRepository.findByOrderIdAndUser(id, user)
+                    .orElseThrow(() -> new ResourceNotFoundException("Giao dịch không tồn tại"));
+            transaction.setStatus(PaymentLinkStatus.CANCELLED);
+            checkoutService.refund(transaction, request);
+        }
+        orderRepository.save(order);
+        return orderMapper.toOrderResponse(order);
+    }
+
     public OrderResponse cancelOrder(Long id) {
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         User user = userPrincipal.getUser();
         Order order = orderRepository.findByIdAndUser(id, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Đơn hàng không tồn tại"));
+        if (order.getOrderStatus() == OrderStatus.CANCELLED) {
+            throw new BadRequestException("Đơn hàng đã hoàn kho trước đó");
+        }
         if (order.getOrderStatus() != OrderStatus.PENDING) {
             throw new BadRequestException("Đơn hàng không thể hủy");
         }

@@ -130,4 +130,17 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST
         ), HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(CheckoutException.class)
+    public ResponseEntity<ApiDataResponse<Void>> handleCheckoutException(CheckoutException exception) {
+        return new ResponseEntity<>(new ApiDataResponse<>(
+                false,
+                exception.getMessage(),
+                null,
+                null,
+                HttpStatus.BAD_REQUEST
+        ), HttpStatus.BAD_REQUEST);
+    }
+
+
 }

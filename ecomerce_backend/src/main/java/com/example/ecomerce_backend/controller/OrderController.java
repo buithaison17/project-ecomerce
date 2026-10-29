@@ -1,6 +1,7 @@
 package com.example.ecomerce_backend.controller;
 
 import com.example.ecomerce_backend.constants.OrderStatus;
+import com.example.ecomerce_backend.model.dto.request.CancelOrderRequest;
 import com.example.ecomerce_backend.model.dto.request.CreateOrderRequest;
 import com.example.ecomerce_backend.model.dto.request.OrderUpdateStatusRequest;
 import com.example.ecomerce_backend.model.dto.response.ApiDataResponse;
@@ -97,12 +98,13 @@ public class OrderController {
     @Secured("ROLE_CUSTOMER")
     @PatchMapping("/{id}/cancel")
     public ResponseEntity<ApiDataResponse<OrderResponse>> cancelOrder(
-            @PathVariable Long id
+            @PathVariable Long id,
+            @RequestBody CancelOrderRequest request
     ) {
         return new ResponseEntity<>(new ApiDataResponse<>(
                 true,
                 "Cập nhật trạng thái đơn hàng thành công",
-                orderService.cancelOrder(id),
+                orderService.cancelOrder(id, request),
                 null,
                 HttpStatus.OK
         ), HttpStatus.OK);

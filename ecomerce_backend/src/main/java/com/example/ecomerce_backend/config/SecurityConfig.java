@@ -72,7 +72,7 @@ public class SecurityConfig {
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH"));
         // Frontend được phép truy cập
         configuration.setAllowedOrigins(
-                List.of("http://localhost:3000", frontendUrl));
+                List.of("http://novashop1.duckdns.org", frontendUrl));
         // Cho phép gửi cookie hoặc thông tin xác thực
         configuration.setAllowCredentials(true);
         // Các request header được phép
