@@ -48,6 +48,19 @@ public class ProductService {
 
     // ------------------------------------------------------------ Khách hàng (public)
 
+    /**
+     * Tìm kiếm sản phẩm với các bộ lọc và phân trang
+     * @param keyword Từ khóa tìm kiếm theo tên sản phẩm
+     * @param categoryId ID danh mục để lọc
+     * @param minPrice Giá tối thiểu
+     * @param maxPrice Giá tối đa
+     * @param sortBy Trường để sắp xếp (price, name, createdAt)
+     * @param sortDir Hướng sắp xếp (asc, desc)
+     * @param page Số trang (bắt đầu từ 0)
+     * @param size Số lượng sản phẩm mỗi trang
+     * @return PageResponse chứa danh sách ProductSummaryResponse
+     * @throws BadRequestException Nếu minPrice > maxPrice
+     */
     @Transactional(readOnly = true)
     public PageResponse<ProductSummaryResponse> search(
             String keyword, Long categoryId, BigDecimal minPrice, BigDecimal maxPrice,
@@ -75,6 +88,12 @@ public class ProductService {
                 mapper.toProductSummary(product, Math.max(stockByProduct.getOrDefault(product.getId(), 0), 0)));
     }
 
+    /**
+     * Lấy chi tiết sản phẩm theo ID
+     * @param id ID của sản phẩm
+     * @return ProductResponse chứa thông tin chi tiết và tồn kho
+     * @throws ResourceNotFoundException Nếu không tìm thấy sản phẩm
+     */
     @Transactional(readOnly = true)
     public ProductResponse getById(Long id) {
         return toDetail(findActive(id));
@@ -82,6 +101,12 @@ public class ProductService {
 
     // ------------------------------------------------------------------ Admin
 
+    /**
+     * Tạo sản phẩm mới (admin)
+     * @param request Thông tin sản phẩm cần tạo
+     * @return ProductResponse của sản phẩm vừa tạo
+     * @throws ResourceNotFoundException Nếu không tìm thấy danh mục
+     */
     @Transactional
     public ProductResponse create(CreateProductRequest request) {
         Category category = categoryService.findActive(request.categoryId());
@@ -108,6 +133,13 @@ public class ProductService {
         return mapper.toProductDetail(product, initialQuantity);
     }
 
+    /**
+     * Cập nhật thông tin sản phẩm (admin)
+     * @param id ID của sản phẩm cần cập nhật
+     * @param request Thông tin mới của sản phẩm
+     * @return ProductResponse sau khi cập nhật
+     * @throws ResourceNotFoundException Nếu không tìm thấy sản phẩm hoặc danh mục
+     */
     @Transactional
     public ProductResponse update(Long id, UpdateProductRequest request) {
         Product product = findActive(id);
@@ -120,7 +152,9 @@ public class ProductService {
     }
 
     /**
-     * Ẩn/xóa mềm: sản phẩm biến mất khỏi catalog nhưng đơn hàng cũ vẫn tham chiếu được.
+     * Xóa mềm sản phẩm (admin) - sản phẩm biến mất khỏi catalog nhưng đơn hàng cũ vẫn tham chiếu được
+     * @param id ID của sản phẩm cần xóa
+     * @throws ResourceNotFoundException Nếu không tìm thấy sản phẩm
      */
     @Transactional
     public void delete(Long id) {
@@ -130,6 +164,14 @@ public class ProductService {
         log.info("Xóa (mềm) sản phẩm id={}", id);
     }
 
+    /**
+     * Thêm ảnh cho sản phẩm (admin)
+     * @param productId ID của sản phẩm
+     * @param file File ảnh cần thêm
+     * @return ProductResponse sau khi thêm ảnh
+     * @throws BadRequestException Nếu vượt quá số lượng ảnh tối đa
+     * @throws ResourceNotFoundException Nếu không tìm thấy sản phẩm
+     */
     @Transactional
     public ProductResponse addImage(Long productId, MultipartFile file) {
         Product product = findActive(productId);
@@ -146,6 +188,13 @@ public class ProductService {
         return toDetail(product);
     }
 
+    /**
+     * Xóa ảnh của sản phẩm (admin)
+     * @param productId ID của sản phẩm
+     * @param imageId ID của ảnh cần xóa
+     * @return ProductResponse sau khi xóa ảnh
+     * @throws ResourceNotFoundException Nếu không tìm thấy sản phẩm hoặc ảnh
+     */
     @Transactional
     public ProductResponse deleteImage(Long productId, Long imageId) {
         Product product = findActive(productId);
@@ -161,17 +210,36 @@ public class ProductService {
 
     // ------------------------------------------------------------------ helpers
 
+    /**
+     * Tìm sản phẩm đang hoạt động theo ID
+     * @param id ID của sản phẩm
+     * @return Entity Product
+     * @throws ResourceNotFoundException Nếu không tìm thấy sản phẩm
+     */
     private Product findActive(Long id) {
         return productRepository.findActiveById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm id=" + id));
     }
 
+    /**
+     * Chuyển đổi Product entity sang ProductResponse kèm thông tin tồn kho
+     * @param product Entity Product
+     * @return ProductResponse
+     */
     private ProductResponse toDetail(Product product) {
         int stock = inventoryRepository.findByProductId(product.getId())
                 .map(Inventory::availableQuantity).orElse(0);
         return mapper.toProductDetail(product, Math.max(stock, 0));
     }
 
+    /**
+     * Xây dựng Specification cho JPA Criteria API để tìm kiếm sản phẩm
+     * @param keyword Từ khóa tìm kiếm
+     * @param categoryId ID danh mục
+     * @param minPrice Giá tối thiểu
+     * @param maxPrice Giá tối đa
+     * @return Specification<Product>
+     */
     private Specification<Product> buildSpecification(
             String keyword, Long categoryId, BigDecimal minPrice, BigDecimal maxPrice
     ) {
@@ -196,7 +264,9 @@ public class ProductService {
     }
 
     /**
-     * Escape ký tự đặc biệt của LIKE để keyword "50%" không bị hiểu thành wildcard.
+     * Escape ký tự đặc biệt của LIKE để keyword "50%" không bị hiểu thành wildcard
+     * @param value Chuỗi cần escape
+     * @return Chuỗi đã escape
      */
     private String escapeLike(String value) {
         return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
