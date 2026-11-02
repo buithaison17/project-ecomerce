@@ -1,5 +1,5 @@
 import { api } from "../lib/axios";
-import type { AdminOrder, ApiDataResponse, DashboardSummaryResponse, InventoryItem, PageResponse } from "../types/admin";
+import type { AdminOrder, AdminUserResponse, ApiDataResponse, DashboardSummaryResponse, InventoryItem, PageResponse } from "../types/admin";
 import type { Category, ProductSummary } from "../types/catalog";
 import type { OrderItemResponse, OrderStatus } from "../types/order";
 import { getProductThumbnail, orderService } from "./orderService";
@@ -243,6 +243,23 @@ export const adminService = {
 
     async deleteProduct(productId: number) {
         const response = await api.delete<ApiDataResponse<void>>(`/admin/products/${productId}`);
+        return response.data.data;
+    },
+
+    async getUsers(keyword?: string, role?: string, page = 1, size = 10): Promise<PageResponse<AdminUserResponse>> {
+        const response = await api.get<ApiDataResponse<PageResponse<AdminUserResponse>>>("/admin/users", {
+            params: { keyword, role, page, size },
+        });
+        return response.data.data;
+    },
+
+    async blockUser(userId: number) {
+        const response = await api.patch<ApiDataResponse<void>>(`/admin/users/${userId}/block`);
+        return response.data.data;
+    },
+
+    async unblockUser(userId: number) {
+        const response = await api.patch<ApiDataResponse<void>>(`/admin/users/${userId}/unblock`);
         return response.data.data;
     },
 };
