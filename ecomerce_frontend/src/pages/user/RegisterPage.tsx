@@ -48,6 +48,7 @@ export default function RegisterPage() {
 
     const onSubmit = async (data: RegisterForm) => {
         try {
+            // Kết nối với backend API đăng ký người dùng
             const res = await api.post("/auth/register", data);
             const userObj = res.data?.data?.user;
             const userInfoObj = res.data?.data?.userInformation;

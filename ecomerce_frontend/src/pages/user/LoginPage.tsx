@@ -32,6 +32,7 @@ export default function LoginPage() {
 
     const onSubmit = async (data: LoginForm) => {
         try {
+            // Kết nối với backend API thông qua authStore.login()
             await login(data);
             message.success("Đăng nhập thành công");
             const currentUser = useAuthStore.getState().user;
